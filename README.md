@@ -95,6 +95,11 @@ If you encounter some dependency issue, try this:
 ```
 sudo apt install python3-pyqt5 libsecp256k1-0 python3-cryptography
 ```
+Sometimes pip may not install the packages listed in requirements.txt in the proper way.
+In this case, just install the missing package shown in the error message with
+```
+pip3 install {missing_package_name}
+```
 
 ## Disclaimer
 SeedCheck.py aims to help who finds a seed to determinate how it was used without the need of checking it with many clients. Of course, there are a lot of possibilities not handled by SeedCheck.py, so do not only rely of its output. There could be custom derivation paths used by skilled users or with some kind of client. The seed could also be related to different coins not checked by the tool.
