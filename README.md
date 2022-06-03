@@ -84,6 +84,7 @@ The name of the virtual enviroment should appear, in brackets, on the left of yo
 Now you can install the dependencies
 ```
 pip3 install -r requirements.txt
+sudo apt install apt-xapian-index
 ```
 Finally, you are ready to run the tool
 ```
