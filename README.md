@@ -12,34 +12,34 @@ The tool supports the following coins with the indicated derivation paths:
 --* Standard wallet
 --* Segwit wallet
 - BIP39
---* m/44'/0'/0'/0
---* m/44'/0'/0'/0' (hardened addresses)
---* m/49'/0'/0'/0
---* m/49'/0'/0'/0' (hardened addresses)
---* m/84'/0'/0'/0
---* m/84'/0'/0'/0' (hardened addresses)
---* m/84'/00/2147483645'/0'/0 (Samourai wallet Premix)
---* m/84'/00/2147483646'/0'/0 (Samourai wallet Postmix)
+  * m/44'/0'/0'/0
+  * m/44'/0'/0'/0' (hardened addresses)
+  * m/49'/0'/0'/0
+  * m/49'/0'/0'/0' (hardened addresses)
+  * m/84'/0'/0'/0
+  * m/84'/0'/0'/0' (hardened addresses)
+  * m/84'/00/2147483645'/0'/0 (Samourai wallet Premix)
+  * m/84'/00/2147483646'/0'/0 (Samourai wallet Postmix)
 ###Ethereum
 - BIP39
---* m/44'/60'/0'/0
---* m/44'/60'/0'/0' (hardened addresses)
+  * m/44'/60'/0'/0
+  * m/44'/60'/0'/0' (hardened addresses)
 ###Litecoin
 - BIP39
---* m/44'/2'/0'/0
---* m/44'/2'/0'/0' (hardened addresses)
---* m/49'/2'/0'/0
---* m/49'/2'/0'/0' (hardened addresses)
---* m/84'/2'/0'/0
---* m/84'/2'/0'/0' (hardened addresses)
+  * m/44'/2'/0'/0
+  * m/44'/2'/0'/0' (hardened addresses)
+  * m/49'/2'/0'/0
+  * m/49'/2'/0'/0' (hardened addresses)
+  * m/84'/2'/0'/0
+  * m/84'/2'/0'/0' (hardened addresses)
 ###Dash
 - BIP39
---* m/44'/5'/0'/0
---* m/44'/5'/0'/0' (hardened addresses)
+  * m/44'/5'/0'/0
+  * m/44'/5'/0'/0' (hardened addresses)
 ###ZCash
 - BIP39
---* m/44'/133'/0'/0
---* m/44'/133'/0'/0' (hardened addresses)
+  * m/44'/133'/0'/0
+  * m/44'/133'/0'/0' (hardened addresses)
 ###Monero
 - Monero wallet (GUI or CLI)
 - MyMonero wallet
@@ -94,3 +94,14 @@ If you encounter some dependency issue, try this:
 ```
 sudo apt install python3-pyqt5 libsecp256k1-0 python3-cryptography
 ```
+
+##Disclaimer
+SeedCheck.py aims to help who finds a seed to determinate how it was used without the need of checking it with many clients. Of course, there are a lot of possibilities not handled by SeedCheck.py, so do not only rely of its output. There could be custom derivation paths used by skilled users or with some kind of client. The seed could also be related to different coins not checked by the tool.
+When a derivation path is found, I suggest to try it with some kind of multicurrency client, because the mnemonic seed could derive addresses for many different coins.
+
+##Read more
+- [BIPs](https://github.com/bitcoin/bips)
+- [Electrum wallet](https://github.com/spesmilo/electrum)
+- [Monero](https://github.com/monero-project/monero)
+- [HD wallet](https://pypi.org/project/hdwallet/)
+- [Monero Python](https://monero-python.readthedocs.io/en/latest/)
