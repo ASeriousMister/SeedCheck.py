@@ -105,3 +105,9 @@ When a derivation path is found, I suggest to try it with some kind of multicurr
 - [Monero](https://github.com/monero-project/monero)
 - [HD wallet](https://pypi.org/project/hdwallet/)
 - [Monero Python](https://monero-python.readthedocs.io/en/latest/)
+
+## To do list
+- add support for Electrum forks for different coin
+- add support for Electrum Slip39
+- add support for Taproot Bitcoin addresses
+- check Monero addresses' activity
