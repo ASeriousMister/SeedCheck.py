@@ -1,5 +1,6 @@
 # SeedCheck.py
 SeedCheck.py is a Python tool that tries  to determinate the derivation path a mnemonic seed was used with.
+It is part of the bigger project Anu₿itux: more info at https://t.me/anubitux.
 
 ## Overview
 It allows the user to insert a mnemonic seed with an eventual passphrase and generates addresses with many derivation algorithms.
@@ -83,17 +84,12 @@ source scve/bin/activate
 The name of the virtual enviroment should appear, in brackets, on the left of your command line. 
 Now you can install the dependencies
 ```
+sudo apt install python3-pyqt5 libsecp256k1-0 python3-cryptography
 pip3 install -r requirements.txt
-sudo apt install apt-xapian-index
 ```
 Finally, you are ready to run the tool
 ```
 python3 seedcheck.py
-```
-
-If you encounter some dependency issue, try this:
-```
-sudo apt install python3-pyqt5 libsecp256k1-0 python3-cryptography
 ```
 Sometimes pip may not install the packages listed in requirements.txt in the proper way.
 In this case, just install the missing package shown in the error message with
