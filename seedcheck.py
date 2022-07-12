@@ -672,6 +672,9 @@ if (is_bip39 and online_check):
         else:
             i += 1
 
+if (online_found == False and is_bip39 == True):
+    print('Bip39 derivation path not found\n')
+            
 # Printing if no derivation path gave addresses used online
 if (online_found == False and online_found_el == False and online_check == True and (is_bip39 == True or is_electrum == True)):
     print('It was not possible to determinate the derivation path used with the given seed or maybe it was never used')
