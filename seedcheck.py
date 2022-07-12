@@ -11,7 +11,10 @@ from hdwallet.utils import generate_mnemonic, is_mnemonic
 from hdwallet.symbols import BTC, ETH, LTC, ZEC, DASH
 import blockcypher
 from monero.seed import Seed
+import os
 
+#Editi this line if you need to use a specific working directory
+#os.chdir('/home/working_path')
 
 # checks if given seed's words are in the available wordlist
 def checklist(path, lenght, language, kind, seedl): 
@@ -399,6 +402,7 @@ if (is_electrumen or is_electrumcn or is_electrumes or is_electrumjp or is_elect
 
     # verify electrum slip39 wordlist
 # checking if address derived with Electrum have been used
+online_found_el = False
 if (is_electrum and online_check):
     print('\nchecking electrum addresses online')
     index = 0
@@ -413,7 +417,7 @@ if (is_electrum and online_check):
         else:
             check_used = 0
             print('\n---> The entered seed has activity with Electrum <---\n')
-            online_found = True
+            online_found_el = True
     if (data == '0' and index == 9):
         print('seed is compatible with electrum but seems to be unused (with btc)')
 
@@ -669,7 +673,7 @@ if (is_bip39 and online_check):
             i += 1
 
 # Printing if no derivation path gave addresses used online
-if (online_found == False and online_check == True and (is_bip39 == True or is_electrum == True)):
+if (online_found == False and online_found_el == False and online_check == True and (is_bip39 == True or is_electrum == True)):
     print('It was not possible to determinate the derivation path used with the given seed or maybe it was never used')
 
 # Checkink Monero
