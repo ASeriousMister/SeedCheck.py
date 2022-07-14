@@ -116,3 +116,5 @@ When a derivation path is found, I suggest to try it with some kind of multicurr
 - add support for Electrum Slip39
 - add support for Taproot Bitcoin addresses
 - check Monero addresses' activity
+
+
