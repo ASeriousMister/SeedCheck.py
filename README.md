@@ -97,6 +97,9 @@ In this case, just install the missing package shown in the error message with
 pip3 install {missing_package_name}
 ```
 
+## Additional tips
+If you want to launch the tool as a single command in your terminal adding it to your PATH, you need to specify the tools folder changing the working directory of the tool in the seedcheck.py file. Go to line 16-17, edit the chdir command and uncomment it.
+
 ## Disclaimer
 SeedCheck.py aims to help who finds a seed to determinate how it was used without the need of checking it with many clients. Of course, there are a lot of possibilities not handled by SeedCheck.py, so do not only rely of its output. There could be custom derivation paths used by skilled users or with some kind of client. The seed could also be related to different coins not checked by the tool.
 When a derivation path is found, I suggest to try it with some kind of multicurrency client, because the mnemonic seed could derive addresses for many different coins.
