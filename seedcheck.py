@@ -16,8 +16,9 @@ import os
 #Editi this line if you need to use a specific working directory
 #os.chdir('/home/working_path')
 
+
 # checks if given seed's words are in the available wordlist
-def checklist(path, lenght, language, kind, seedl): 
+def checklist(path, lenght, language, kind, seedl):
     f = open(path, 'r')
 #    print(f'===Starting with {kind} {language} wordlist===')
     it = 0
@@ -34,7 +35,7 @@ def checklist(path, lenght, language, kind, seedl):
 
 
 def electrum_derive(seedl, passw, address_index, dertype):
-# derives addresses with electrum's derivation
+    # derives addresses with electrum's derivation
     change = False
     is_p2sh = False
     k = keystore.from_seed(seedl, passw, is_p2sh)  # '' for passphrase
@@ -48,12 +49,14 @@ def electrum_derive(seedl, passw, address_index, dertype):
 #    elif dertype == 'p2wpkh-p2sh':      implement
 
 #returns address receiving coin as sym, language, seed, passphrase, bip version, coin number, address index and if address is hardened
+
+
 def add_der(sym, lang, seedl, psph, bip, coin, num, is_hardened):
     hdwallet: HDWallet = HDWallet(symbol=sym)
     hdwallet.from_mnemonic(mnemonic=seedl, passphrase=psph, language=lang)
     hdwallet.from_index(bip, hardened=True)
     hdwallet.from_index(coin, hardened=True)
-    hdwallet.from_index(0, hardened=True) 
+    hdwallet.from_index(0, hardened=True)
     hdwallet.from_index(0)
     hdwallet.from_index(num, hardened=is_hardened)
     if bip == 44:
@@ -64,13 +67,14 @@ def add_der(sym, lang, seedl, psph, bip, coin, num, is_hardened):
         return hdwallet.p2wpkh_in_p2sh_address()
 
 
-# uses custom derivation paths used by samourai wallet    
+# uses custom derivation paths used by samourai wallet
 def sam_der(lang, seedl, psph, mix, num, is_hardened):
     hdwallet: HDWallet = HDWallet(symbol=BTC)
     hdwallet.from_mnemonic(mnemonic=seedl, passphrase=psph, language=lang)
     hdwallet.from_index(84, hardened=True)
     hdwallet.from_index(0, hardened=True)
-    hdwallet.from_index(mix, hardened=True)  #sam premix= 2147483645' postmix= 2147483646'
+    # sam premix= 2147483645' postmix= 2147483646'
+    hdwallet.from_index(mix, hardened=True)
     hdwallet.from_index(0)
     hdwallet.from_index(num, hardened=is_hardened)
     return hdwallet.p2wpkh_address()
@@ -85,150 +89,134 @@ def is_connected(host='http://google.com'):
         return False
 
 
-def bip39_derive(s_seed, psph, lang):
-    addr_dict = {
-        'btc_bip44_0': '',
-        'btc_bip44_1': '',
-        'btc_bip44_2': '',
-        'btc_bip44_0h': '',
-        'btc_bip44_1h': '',
-        'btc_bip44_2h': '',
-        'btc_bip49_0': '',
-        'btc_bip49_1': '',
-        'btc_bip49_2': '',
-        'btc_bip49_0h': '',
-        'btc_bip49_1h': '',
-        'btc_bip49_2h': '',
-        'btc_bip84_0': '',
-        'btc_bip84_1': '',
-        'btc_bip84_2': '',
-        'btc_bip84_0h': '',
-        'btc_bip84_1h': '',
-        'btc_bip84_2h': '',
-        'btc_sam_pre0': '',
-        'btc_sam_pre1': '',
-        'btc_sam_pre2': '',
-        'btc_sam_post0': '',
-        'btc_sam_post1': '',
-        'btc_sam_post2': '',
-        'eth_bip44_0': '',
-        'eth_bip44_1': '',
-        'eth_bip44_2': '',
-        'eth_bip44_0h': '',
-        'eth_bip44_1h': '',
-        'eth_bip44_2h': '',
-        'ltc_bip44_0': '',
-        'ltc_bip44_1': '',
-        'ltc_bip44_2': '',
-        'ltc_bip44_0h': '',
-        'ltc_bip44_1h': '',
-        'ltc_bip44_2h': '',
-        'ltc_bip49_0': '',
-        'ltc_bip49_1': '',
-        'ltc_bip49_2': '',
-        'ltc_bip49_0h': '',
-        'ltc_bip49_1h': '',
-        'ltc_bip49_2h': '',
-        'ltc_bip84_0': '',
-        'ltc_bip84_1': '',
-        'ltc_bip84_2': '',
-        'ltc_bip84_0h': '',
-        'ltc_bip84_1h': '',
-        'ltc_bip84_2h': '',
-        'zec_bip44_0': '',
-        'zec_bip44_1': '',
-        'zec_bip44_2': '',
-        'zec_bip44_0h': '',
-        'zec_bip44_1h': '',
-        'zec_bip44_2h': '',
-        'dash_bip44_0': '',
-        'dash_bip44_1': '',
-        'dash_bip44_2': '',
-        'dash_bip44_0h': '',
-        'dash_bip44_1h': '',
-        'dash_bip44_2h': ''
-    }
-    # Bip44 standard Bitcoin addresses dervation
-    addr_dict.update({'btc_bip44_0': add_der(BTC, lang, s_seed, psph, 44, 0, 0, False)})
-    addr_dict.update({'btc_bip44_1': add_der(BTC, lang, s_seed, psph, 44, 0, 1, False)})
-    addr_dict.update({'btc_bip44_2': add_der(BTC, lang, s_seed, psph, 44, 0, 2, False)})
-    # Bip44 hardened Bitcoin addresses derivation
-    addr_dict.update({'btc_bip44_0h': add_der(BTC, lang, s_seed, psph, 44, 0, 0, True)})
-    addr_dict.update({'btc_bip44_1h': add_der(BTC, lang, s_seed, psph, 44, 0, 1, True)})
-    addr_dict.update({'btc_bip44_2h': add_der(BTC, lang, s_seed, psph, 44, 0, 2, True)})
-    # Bip49 standard Bitcoin addresses derivation
-    addr_dict.update({'btc_bip49_0': add_der(BTC, lang, s_seed, psph, 49, 0, 0, False)})
-    addr_dict.update({'btc_bip49_1': add_der(BTC, lang, s_seed, psph, 49, 0, 1, False)})
-    addr_dict.update({'btc_bip49_2': add_der(BTC, lang, s_seed, psph, 49, 0, 2, False)})
-    # Bip49 hardened Bitcoin addresses derivation
-    addr_dict.update({'btc_bip49_0h': add_der(BTC, lang, s_seed, psph, 49, 0, 0, True)})
-    addr_dict.update({'btc_bip49_1h': add_der(BTC, lang, s_seed, psph, 49, 0, 1, True)})
-    addr_dict.update({'btc_bip49_2h': add_der(BTC, lang, s_seed, psph, 49, 0, 2, True)})
-    # Bip84 standard Bitcoin addresses derivation
-    addr_dict.update({'btc_bip84_0': add_der(BTC, lang, s_seed, psph, 84, 0, 0, False)})
-    addr_dict.update({'btc_bip84_1': add_der(BTC, lang, s_seed, psph, 84, 0, 1, False)})
-    addr_dict.update({'btc_bip84_2': add_der(BTC, lang, s_seed, psph, 84, 0, 2, False)})
-    # Bip84 hardened Bitcoin addresses derivation
-    addr_dict.update({'btc_bip84_0h': add_der(BTC, lang, s_seed, psph, 84, 0, 0, True)})
-    addr_dict.update({'btc_bip84_1h': add_der(BTC, lang, s_seed, psph, 84, 0, 1, True)})
-    addr_dict.update({'btc_bip84_2h': add_der(BTC, lang, s_seed, psph, 84, 0, 2, True)})   
-    # Samourai PreMix addresses
-    addr_dict.update({'btc_sam_pre0': sam_der(lang, s_seed, psph, 2147483645, 0, False)})   #sam premix= 2147483645' postmix= 2147483646'
-    addr_dict.update({'btc_sam_pre1': sam_der(lang, s_seed, psph, 2147483645, 1, False)})
-    addr_dict.update({'btc_sam_pre2': sam_der(lang, s_seed, psph, 2147483645, 2, False)})
-    # Samourai PostMix addresses
-    addr_dict.update({'btc_sam_post0': sam_der(lang, s_seed, psph, 2147483646, 0, False)})   #sam premix= 2147483645' postmix= 2147483646'
-    addr_dict.update({'btc_sam_post1': sam_der(lang, s_seed, psph, 2147483646, 1, False)})
-    addr_dict.update({'btc_sam_post2': sam_der(lang, s_seed, psph, 2147483646, 2, False)})
-    # Bip 44 standard Ethereum address dervation
-    addr_dict.update({'eth_bip44_0': add_der(ETH, lang, s_seed, psph, 44, 60, 0, False)})
-    addr_dict.update({'eth_bip44_1': add_der(ETH, lang, s_seed, psph, 44, 60, 1, False)})
-    addr_dict.update({'eth_bip44_2': add_der(ETH, lang, s_seed, psph, 44, 60, 2, False)})
-    # Bip44 hardened Ethereum addresses derivation
-    addr_dict.update({'eth_bip44_0h': add_der(ETH, lang, s_seed, psph, 44, 60, 0, True)})
-    addr_dict.update({'eth_bip44_1h': add_der(ETH, lang, s_seed, psph, 44, 60, 1, True)})
-    addr_dict.update({'eth_bip44_2h': add_der(ETH, lang, s_seed, psph, 44, 60, 2, True)})    
-    # Bip44 standard Litecoin addresses dervation
-    addr_dict.update({'ltc_bip44_0': add_der(LTC, lang, s_seed, psph, 44, 2, 0, False)})
-    addr_dict.update({'ltc_bip44_1': add_der(LTC, lang, s_seed, psph, 44, 2, 1, False)})
-    addr_dict.update({'ltc_bip44_2': add_der(LTC, lang, s_seed, psph, 44, 2, 2, False)})
-    # Bip44 hardened Litecoin addresses derivation
-    addr_dict.update({'ltc_bip44_0h': add_der(LTC, lang, s_seed, psph, 44, 2, 0, True)})
-    addr_dict.update({'ltc_bip44_1h': add_der(LTC, lang, s_seed, psph, 44, 2, 1, True)})
-    addr_dict.update({'ltc_bip44_2h': add_der(LTC, lang, s_seed, psph, 44, 2, 2, True)})
-    # Bip49 standard Litecoin addresses derivation
-    addr_dict.update({'ltc_bip49_0': add_der(LTC, lang, s_seed, psph, 49, 2, 0, False)})
-    addr_dict.update({'ltc_bip49_1': add_der(LTC, lang, s_seed, psph, 49, 2, 1, False)})
-    addr_dict.update({'ltc_bip49_2': add_der(LTC, lang, s_seed, psph, 49, 2, 2, False)})
-    # Bip49 hardened Litecoin addresses derivation
-    addr_dict.update({'ltc_bip49_0h': add_der(LTC, lang, s_seed, psph, 49, 2, 0, True)})
-    addr_dict.update({'ltc_bip49_1h': add_der(LTC, lang, s_seed, psph, 49, 2, 1, True)})
-    addr_dict.update({'ltc_bip49_2h': add_der(LTC, lang, s_seed, psph, 49, 2, 2, True)})
-    # Bip84 standard Litecoin addresses derivation
-    addr_dict.update({'ltc_bip84_0': add_der(LTC, lang, s_seed, psph, 84, 2, 0, False)})
-    addr_dict.update({'ltc_bip84_1': add_der(LTC, lang, s_seed, psph, 84, 2, 1, False)})
-    addr_dict.update({'ltc_bip84_2': add_der(LTC, lang, s_seed, psph, 84, 2, 2, False)})
-    # Bip84 hardened Litecoin addresses derivation
-    addr_dict.update({'ltc_bip84_0h': add_der(LTC, lang, s_seed, psph, 84, 2, 0, True)})
-    addr_dict.update({'ltc_bip84_1h': add_der(LTC, lang, s_seed, psph, 84, 2, 1, True)})
-    addr_dict.update({'ltc_bip84_2h': add_der(LTC, lang, s_seed, psph, 84, 2, 2, True)})
-    # Bip44 standard ZCash addresses derivation
-    addr_dict.update({'zec_bip44_0': add_der(ZEC, lang, s_seed, psph, 44, 133, 0, False)})
-    addr_dict.update({'zec_bip44_1': add_der(ZEC, lang, s_seed, psph, 44, 133, 1, False)})
-    addr_dict.update({'zec_bip44_2': add_der(ZEC, lang, s_seed, psph, 44, 133, 2, False)})
-    # Bip44 hardened ZCash addresses derivation
-    addr_dict.update({'zec_bip44_0h': add_der(ZEC, lang, s_seed, psph, 44, 133, 0, True)})
-    addr_dict.update({'zec_bip44_1h': add_der(ZEC, lang, s_seed, psph, 44, 133, 1, True)})
-    addr_dict.update({'zec_bip44_2h': add_der(ZEC, lang, s_seed, psph, 44, 133, 2, True)})
-    # Bip44 standard Dash addresses derivation
-    addr_dict.update({'dash_bip44_0': add_der(DASH, lang, s_seed, psph, 44, 5, 0, False)})
-    addr_dict.update({'dash_bip44_1': add_der(DASH, lang, s_seed, psph, 44, 5, 1, False)})
-    addr_dict.update({'dash_bip44_2': add_der(DASH, lang, s_seed, psph, 44, 5, 2, False)})
-    # Bip44 hardened Dash addresses derivation
-    addr_dict.update({'dash_bip44_0h': add_der(DASH, lang, s_seed, psph, 44, 5, 0, True)})
-    addr_dict.update({'dash_bip44_1h': add_der(DASH, lang, s_seed, psph, 44, 5, 1, True)})
-    addr_dict.update({'dash_bip44_2h': add_der(DASH, lang, s_seed, psph, 44, 5, 2, True)})
-    return addr_dict
+# Creates list with addresses derived in the specifued language
+def btc_list_der(lang, how_many):
+    btc_list = []
+    # bitcoin bip44 not hardened addresses
+#    btc_list.append('---> BITCOIN BIP44 ADDRESSES <---')
+    index = 0
+    while index < how_many:
+        btc_list.append(add_der(BTC, lang, seed_str, passphrase, 44, 0, index, False))
+        index += 1
+    # bitcoin bip44 hardened addresses
+    index = 0
+    while index < how_many:
+        btc_list.append(add_der(BTC, lang, seed_str, passphrase, 44, 0, index, True))
+        index += 1
+    # bitcoin bip49 not hardened addresses
+#    btc_list.append('---> BITCOIN BIP49 ADDRESSES <---')
+    index = 0
+    while index < how_many:
+        btc_list.append(add_der(BTC, lang, seed_str, passphrase, 49, 0, index, False))
+        index += 1
+    # bitcoin bip49 hardened addresses
+    index = 0
+    while index < how_many:
+        btc_list.append(add_der(BTC, lang, seed_str, passphrase, 49, 0, index, True))
+        index += 1
+    # bitcoin bip84 not hardened addresses
+#    btc_list.append('---> BITCOIN BIP84 ADDRESSES <---')
+    index = 0
+    while index < how_many:
+        btc_list.append(add_der(BTC, lang, seed_str, passphrase, 84, 0, index, False))
+        index += 1
+    # bitcoin bip84 hardened addresses
+    index = 0
+    while index < how_many:
+        btc_list.append(add_der(BTC, lang, seed_str, passphrase, 84, 0, index, True))
+        index += 1
+    # sam premix= 2147483645' postmix= 2147483646'
+#    btc_list.append('---> BITCOIN SAMOURAI WALLET PREMIX ADDRESSES <---')
+    index = 0
+    while index < how_many:
+        btc_list.append(sam_der(lang, seed_str, passphrase, 2147483645, index, False))
+        index += 1
+#    btc_list.append('---> BITCOIN SAMOURAI WALLET POSTMIX ADDRESSES <---')
+    index = 0
+    while index < how_many:
+        btc_list.append(sam_der(lang, seed_str, passphrase, 2147483646, index, False))
+        index += 1
+    return btc_list
+    
+    
+def eth_list_der(lang, how_many):    
+    eth_list = []
+    # ethereum bip44 not hardened addresses
+    index = 0
+    while index < how_many:
+        eth_list.append(add_der(ETH, lang, seed_str, passphrase, 44, 0, index, False))
+        index += 1
+    # ethereum bip44 hardened addresses
+    index = 0
+    while index < how_many:
+        eth_list.append(add_der(ETH, lang, seed_str, passphrase, 44, 0, index, True))
+        index +=1
+    return eth_list
+
+
+def ltc_list_der(lang, how_many):
+    ltc_list = []
+    # litecoin bip44 not hardened addresses
+    index = 0
+    while index < how_many:
+        ltc_list.append(add_der(LTC, lang, seed_str, passphrase, 44, 0, index, False))
+        index += 1
+    # litecoin bip44 hardened addresses
+    index = 0
+    while index < how_many:
+        ltc_list.append(add_der(LTC, lang, seed_str, passphrase, 44, 0, index, True))
+        index += 1
+    # litecoin bip49 not hardened addresses
+    index = 0
+    while index < how_many:
+        ltc_list.append(add_der(LTC, lang, seed_str, passphrase, 49, 0, index, False))
+        index += 1
+    # litecoin bip49 hardened addresses
+    index = 0
+    while index < how_many:
+        ltc_list.append(add_der(LTC, lang, seed_str, passphrase, 49, 0, index, True))
+        index += 1
+    # litecoin bip84 not hardened addresses
+    index = 0
+    while index < how_many:
+        ltc_list.append(add_der(LTC, lang, seed_str, passphrase, 84, 0, index, False))
+        index += 1
+    # litecoin bip84 hardened addresses
+    index = 0
+    while index < how_many:
+        ltc_list.append(add_der(LTC, lang, seed_str, passphrase, 84, 0, index, True))
+        index += 1
+    return ltc_list
+
+
+def dash_list_der(lang, how_many):    
+    dash_list = []
+    # dash bip44 not hardened addresses
+    index = 0
+    while index < how_many:
+        dash_list.append(add_der(DASH, lang, seed_str, passphrase, 44, 0, index, False))
+        index += 1
+    # dash bip44 hardened addresses
+    index = 0
+    while index < how_many:
+        dash_list.append(add_der(DASH, lang, seed_str, passphrase, 44, 0, index, True))
+        index +=1
+    return dash_list
+
+
+def zec_list_der(lang, how_many):    
+    zec_list = []
+    # ethereum bip44 not hardened addresses
+    index = 0
+    while index < how_many:
+        zec_list.append(add_der(ZEC, lang, seed_str, passphrase, 44, 0, index, False))
+        index += 1
+    # ethereum bip44 hardened addresses
+    index = 0
+    while index < how_many:
+        zec_list.append(add_der(ZEC, lang, seed_str, passphrase, 44, 0, index, True))
+        index +=1
+    return zec_list
 
 
 print('\n=====================\n===   SeedCheck   ===\n=====================\n')
@@ -287,9 +275,23 @@ lan = input(
     'What is the language of the seed? (if unknown type all)\nfor spaces use _\n')
 lan.lower()  # makes the string lowercase to make it easier to check only correct wordlists
 seed_str = ' '.join(seed)
+# Define how many addresses to derive and check online
+how_many = input('how many addresses do you want to be derived?\n')
+how_many = int(how_many)
+if (how_many > 15 and online_check == True):
+    print('You are going to check a lot of addresses. This could overload APIs.')
+    over = input('do you want to continue? If no, seedcheck will derive 15 addresses for each type.\n(y/n)?: ')
+    if (over == 'y' or over == 'Y'):
+        print(f'SeedCheck is going to derive {how_many} addresses')
+    elif (over == 'n' or over == 'N'):
+        print('Seedcheck is going to derive 15 addresses for each type')
+    else:
+        print('No correct answer provided! Seedcheck is going to derive 15 addresses for each type')
+
 print('STARTING THE CHECK\nProvided seed: ', seed_str)
 if (p == 1):
     print(f'where {passphrase} is the passphrase')
+
 
 # Declaring wordlist related variables
 is_bip39cn = False
@@ -302,7 +304,7 @@ is_bip39jp = False
 is_bip39kr = False
 is_bip39pr = False
 is_bip39cn2 = False
-is_bip39 = False # used to decide if run api
+is_bip39 = False  # used to decide if run api
 is_electrumcn = False
 is_electrumen = False
 is_electrumes = False
@@ -320,7 +322,7 @@ is_moneropr = False
 is_moneroru = False
 is_moneroen2 = False
 is_moneroesp = False
-is_monero = False #used to decide if run api
+is_monero = False  # used to decide if run api
 
 # Identifying wordlist
 i = 0
@@ -336,7 +338,8 @@ if ((lan == 'french') or (lan == 'all')):
     is_bip39fr = is_mnemonic(mnemonic=seed_str, language='french')
     is_monerofr = checklist('Wordlists/xmrfr', s_lenght, 'french', 'monero', seed)
 if ((lan == 'portuguese') or (lan == 'all')):
-    is_bip39pr = checklist('Wordlists/b39pr', s_lenght, 'portuguese', 'bip39', seed)  #check only words, not checksum
+    # check only words, not checksum
+    is_bip39pr = checklist('Wordlists/b39pr', s_lenght, 'portuguese', 'bip39', seed)
 #    is_bip39pr = is_mnemonic(mnemonic=seed_str, language='portuguese')    #function not available for portuguese
     is_electrumpr = checklist('Wordlists/elpr', s_lenght, 'portuguese', 'electrum', seed)
     is_moneropr = checklist('Wordlists/xmrpr', s_lenght, 'portuguese', 'monero', seed)
@@ -349,19 +352,21 @@ if ((lan == 'japanese') or (lan == 'all')):
     is_electrumjp = checklist('Wordlists/eljp', s_lenght, 'japanese', 'electrum', seed)
     is_monerojp = checklist('Wordlists/xmrjp', s_lenght, 'japanese', 'monero', seed)
 if ((lan == 'chinese') or (lan == 'all')):
-#    is_bip39cn = checklist('Wordlists/b39cn', len,'chinese_simplified', 'bip39', seed)
-#    is_bip39cn2 = checklist('Wordlists/b39cn2', len,'chinese_traditional', 'bip39', seed)
+    #    is_bip39cn = checklist('Wordlists/b39cn', len,'chinese_simplified', 'bip39', seed)
+    #    is_bip39cn2 = checklist('Wordlists/b39cn2', len,'chinese_traditional', 'bip39', seed)
     is_bip39cn = is_mnemonic(mnemonic=seed_str, language='chinese_simplified')
     is_bip39cn2 = is_mnemonic(mnemonic=seed_str, language='chinese_traditional')
     is_electrumcn = checklist('Wordlists/elcn', s_lenght, 'chinese_simplified', 'electrum', seed)
     is_monerocn = checklist('Wordlists/xmrcn', s_lenght, 'chinese_simplified', 'monero', seed)
 if ((lan == 'czech') or (lan == 'all')):
-    is_bip39cz = checklist('Wordlists/b39cz', s_lenght, 'czech', 'bip39', seed)  # checks only list, not checksum
+    # checks only list, not checksum
+    is_bip39cz = checklist('Wordlists/b39cz', s_lenght, 'czech', 'bip39', seed)
 #    is_bip39cz = is_mnemonic(mnemonic=seed_str, language='czech')  # funcion not available for czech language
 if ((lan == 'korean') or (lan == 'all')):
     is_bip39kr = is_mnemonic(mnemonic=seed_str, language='korean')
 if ((lan == 'russian') or (lan == 'all')):
-    is_moneroru = checklist('Wordlists/xmrru', s_lenght, 'russian', 'monero', seed)
+    is_moneroru = checklist('Wordlists/xmrru', s_lenght,
+                            'russian', 'monero', seed)
 if ((lan == 'esperanto') or (lan == 'all')):
     is_moneroesp = checklist('Wordlists/xmresp', s_lenght, 'esperanto', 'monero', seed)
 if ((lan == 'lojban') or (lan == 'all')):
@@ -375,23 +380,25 @@ if (is_electrumen or is_electrumcn or is_electrumes or is_electrumjp or is_elect
     if seedtype == 'segwit':
         index = 0
         elec_addr = []
-        while (index < 10):
-            elec_addr.append(electrum_derive(seed_str, passphrase, index, 'p2wpkh'))
+        while (index < how_many):
+            elec_addr.append(electrum_derive(
+                seed_str, passphrase, index, 'p2wpkh'))
             index += 1
         print('Found Electrum addresses:')
         index = 0
-        while (index < 10):
+        while (index < how_many):
             print(elec_addr[index])
             index += 1
     elif seedtype == 'standard':
         index = 0
         elec_addr = []
-        while (index < 10):
-            elec_addr.append(electrum_derive(seed_str, passphrase, index, 'p2pkh'))
+        while (index < how_many):
+            elec_addr.append(electrum_derive(
+                seed_str, passphrase, index, 'p2pkh'))
             index += 1
         print('Found Electrum addresses (first 10):')
         index = 0
-        while (index < 10):
+        while (index < how_many):
             print(elec_addr[index])
             index += 1
     else:
@@ -424,131 +431,125 @@ if (is_electrum and online_check):
 if (is_electrum == True and online_check == False):
     print('\n ---> Use block explorers to verifiy if the addresses were used <---\n')
 
+# declaring empty lists
+btc_list = []
+eth_list = []
+ltc_list = []
+dash_list = []
+zec_list = []
+
+
 # deriving bip39 addresses
 if (is_bip39cn):
-    address_dict = bip39_derive(seed_str, passphrase, 'chinese_simplified')
+    btc_list = btc_list_der('chinese_simplified', how_many)
+    eth_list = eth_list_der('chinese_simplified', how_many)
+    ltc_list = ltc_list_der('chinese_simplified', how_many)
+    dash_list = dash_list_der('chinese_simplified', how_many)
+    zec_list = zec_list_der('chinese_simplified', how_many)
     is_bip39 = True
 if (is_bip39cn2):
-    address_dict = bip39_derive(seed_str, passphrase, 'chinese_traditional')
+    btc_list = btc_list_der('chinese_traditional', how_many)
+    eth_list = eth_list_der('chinese_traditional', how_many)
+    ltc_list = ltc_list_der('chinese_traditional', how_many)
+    dash_list = dash_list_der('chinese_traditional', how_many)
+    zec_list = zec_list_der('chinese_traditional', how_many)
     is_bip39 = True
 if (is_bip39cz):
-    address_dict = bip39_derive(seed_str, passphrase, 'czech')
+    btc_list = btc_list_der('czech', how_many)
+    eth_list = eth_list_der('czech', how_many)
+    ltc_list = ltc_list_der('czech', how_many)
+    dash_list = dash_list_der('czech', how_many)
+    zec_list = zec_list_der('czech', how_many)
     is_bip39 = True
 if (is_bip39en):
-    address_dict = bip39_derive(seed_str, passphrase, 'english')
+    btc_list = btc_list_der('english', how_many)
+    eth_list = eth_list_der('english', how_many)
+    ltc_list = ltc_list_der('english', how_many)
+    dash_list = dash_list_der('english', how_many)
+    zec_list = zec_list_der('english', how_many)
     is_bip39 = True
 if (is_bip39es):
-    address_dict = bip39_derive(seed_str, passphrase, 'spanish')
+    btc_list = btc_list_der('spanish', how_many)
+    eth_list = eth_list_der('spanish', how_many)
+    ltc_list = ltc_list_der('spanish', how_many)
+    dash_list = dash_list_der('spanish', how_many)
+    zec_list = zec_list_der('spanish', how_many)
     is_bip39 = True
 if (is_bip39fr):
-    address_dict = bip39_derive(seed_str, passphrase, 'french')
+    btc_list = btc_list_der('french', how_many)
+    eth_list = eth_list_der('french', how_many)
+    ltc_list = ltc_list_der('french', how_many)
+    dash_list = dash_list_der('french', how_many)
+    zec_list = zec_list_der('french', how_many)
     is_bip39 = True
 if (is_bip39it):
-    address_dict = bip39_derive(seed_str, passphrase, 'italian')
+    btc_list = btc_list_der('italian', how_many)
+    eth_list = eth_list_der('italian', how_many)
+    ltc_list = ltc_list_der('italian', how_many)
+    dash_list = dash_list_der('italian', how_many)
+    zec_list = zec_list_der('italian', how_many)
     is_bip39 = True
 if (is_bip39jp):
-    address_dict = bip39_derive(seed_str, passphrase, 'japanese')
+    btc_list = btc_list_der('japanese', how_many)
+    eth_list = eth_list_der('japanese', how_many)
+    ltc_list = ltc_list_der('japanese', how_many)
+    dash_list = dash_list_der('japanese', how_many)
+    zec_list = zec_list_der('japanese', how_many)
     is_bip39 = True
 if (is_bip39kr):
-    address_dict = bip39_derive(seed_str, passphrase, 'korean')
+    btc_list = btc_list_der('korean', how_many)
+    eth_list = eth_list_der('korean', how_many)
+    ltc_list = ltc_list_der('korean', how_many)
+    dash_list = dash_list_der('korean', how_many)
+    zec_list = zec_list_der('korean', how_many)
     is_bip39 = True
 if (is_bip39pr):
-    address_dict = bip39_derive(seed_str, passphrase, 'portuguese')
+    btc_list = btc_list_der('portuguese', how_many)
+    eth_list = eth_list_der('portuguese', how_many)
+    ltc_list = ltc_list_der('portuguese', how_many)
+    dash_list = dash_list_der('portuguese', how_many)
+    zec_list = zec_list_der('portuguese', how_many)
     is_bip39 = True
 
 # Printing Bip39 derived addresses
 if is_bip39:
     print('---> All BIP39 derived address <---')
     print('- Bitcoin addresses -')
+    print('BIP44')
     i = 0
-    btc_list = []
-    btc_list.append(address_dict['btc_bip44_0'])
-    btc_list.append(address_dict['btc_bip44_1'])
-    btc_list.append(address_dict['btc_bip44_2'])
-    btc_list.append(address_dict['btc_bip49_0'])
-    btc_list.append(address_dict['btc_bip49_1'])
-    btc_list.append(address_dict['btc_bip49_2'])
-    btc_list.append(address_dict['btc_bip84_0'])
-    btc_list.append(address_dict['btc_bip84_1'])
-    btc_list.append(address_dict['btc_bip84_2'])
-    btc_list.append(address_dict['btc_bip44_0h'])
-    btc_list.append(address_dict['btc_bip44_1h'])
-    btc_list.append(address_dict['btc_bip44_2h'])
-    btc_list.append(address_dict['btc_bip49_0h'])
-    btc_list.append(address_dict['btc_bip49_1h'])
-    btc_list.append(address_dict['btc_bip49_2h'])
-    btc_list.append(address_dict['btc_bip84_0h'])
-    btc_list.append(address_dict['btc_bip84_1h'])
-    btc_list.append(address_dict['btc_bip84_2h'])
-    btc_list.append(address_dict['btc_sam_pre0'])
-    btc_list.append(address_dict['btc_sam_pre1'])
-    btc_list.append(address_dict['btc_sam_pre2'])
-    btc_list.append(address_dict['btc_sam_post0'])
-    btc_list.append(address_dict['btc_sam_post1'])
-    btc_list.append(address_dict['btc_sam_post2'])
     while i < len(btc_list):
         print(btc_list[i])
-        i += 1  
-    print('- Ethereum addresses -')
+        i += 1
+        if (i == (how_many *2)):
+            print('BIP49')
+        elif (i == (how_many * 4)):
+            print('BIP84')
+        elif (i == (how_many * 6)):
+            print('SAMOURAI PREMIX ADDRESSES')
+        elif (i == (how_many * 7)):
+            print('SAMOURAI POSTMIX ADDRESSES')
+    print('\n- Ethereum addresses -')
     i = 0
-    eth_list = []
-    eth_list.append(address_dict['eth_bip44_0'])
-    eth_list.append(address_dict['eth_bip44_1'])
-    eth_list.append(address_dict['eth_bip44_2'])
-    eth_list.append(address_dict['eth_bip44_0h'])
-    eth_list.append(address_dict['eth_bip44_1h'])
-    eth_list.append(address_dict['eth_bip44_2h'])
     while i < len(eth_list):
         print(eth_list[i])
         i += 1
-    print('- Litecoin addresses -')
+    print('\n- Litecoin addresses -')
+    print('BIP44')
     i = 0
-    ltc_list = []
-    ltc_list.append(address_dict['ltc_bip44_0'])
-    ltc_list.append(address_dict['ltc_bip44_1'])
-    ltc_list.append(address_dict['ltc_bip44_2'])
-    ltc_list.append(address_dict['ltc_bip49_0'])
-    ltc_list.append(address_dict['ltc_bip49_1'])
-    ltc_list.append(address_dict['ltc_bip49_2'])
-    ltc_list.append(address_dict['ltc_bip84_0'])
-    ltc_list.append(address_dict['ltc_bip84_1'])
-    ltc_list.append(address_dict['ltc_bip84_2'])
-    ltc_list.append(address_dict['ltc_bip44_0h'])
-    ltc_list.append(address_dict['ltc_bip44_1h'])
-    ltc_list.append(address_dict['ltc_bip44_2h'])
-    ltc_list.append(address_dict['ltc_bip49_0h'])
-    ltc_list.append(address_dict['ltc_bip44_1h'])
-    ltc_list.append(address_dict['ltc_bip44_2h'])
-    ltc_list.append(address_dict['ltc_bip49_0h'])
-    ltc_list.append(address_dict['ltc_bip49_1h'])
-    ltc_list.append(address_dict['ltc_bip49_2h'])
-    ltc_list.append(address_dict['ltc_bip84_0h'])
-    ltc_list.append(address_dict['ltc_bip84_1h'])
-    ltc_list.append(address_dict['ltc_bip84_2h'])
     while i < len(ltc_list):
         print(ltc_list[i])
         i += 1
-    print('- Dash addresses -')
+        if (i == (how_many * 2)):
+            print('BIP49')
+        elif (i == (how_many * 4)):
+            print('BIP84')
+    print('\n- Dash addresses -')
     i = 0
-    dash_list = []
-    dash_list.append(address_dict['dash_bip44_0'])
-    dash_list.append(address_dict['dash_bip44_1'])
-    dash_list.append(address_dict['dash_bip44_2'])
-    dash_list.append(address_dict['dash_bip44_0h'])
-    dash_list.append(address_dict['dash_bip44_1h'])
-    dash_list.append(address_dict['dash_bip44_2h'])
     while i < len(dash_list):
         print(dash_list[i])
         i += 1
-    print('- ZCash addresses -')
+    print('\n- ZCash addresses -')
     i = 0
-    zec_list = []
-    zec_list.append(address_dict['zec_bip44_0'])
-    zec_list.append(address_dict['zec_bip44_1'])
-    zec_list.append(address_dict['zec_bip44_2'])
-    zec_list.append(address_dict['zec_bip44_0h'])
-    zec_list.append(address_dict['zec_bip44_1h'])
-    zec_list.append(address_dict['zec_bip44_2h'])
     while i < len(zec_list):
         print(zec_list[i])
         i += 1
@@ -557,124 +558,130 @@ if (is_bip39 == True and online_check == False):
     print('\n ---> Use block explorers to verifiy if the addresses were used <---\n')
 
 # Checking Bip39 addresses online
-online_found = False   #if True address was found used and a message will be shown
+online_found = False  # if True address was found used and a message will be shown
 if (is_bip39 and online_check):
     print('\nchecking bip39 derived addresses online')
     #check BTC
     i = 0
-    while i < 24:
+    while i < len(btc_list):
         link = 'https://blockchain.info/q/addressfirstseen/' + btc_list[i]
         used = requests.get(link)
         data = used.text    # gives a string
         if data != '0':
-            if i < 3:
+            if i < how_many:
                 print('--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 6:
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 9:
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 12:
+#                i = ((int(i/how_many)) * how_many) + how_many
+                i = how_many
+            elif i < (how_many * 2):
                 print('--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 15:
+ #               print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0 ---')
+                i = how_many * 2
+            elif i < (how_many * 3):
+                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0 ---')
+               # print('--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0 ---')
+                i = how_many * 3
+            elif i < (how_many * 4):
+              #  print('--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0\' ---')
                 print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 18:
+                i = how_many * 4
+            elif i < (how_many * 5):
+             #   print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0\' ---')
+                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0 ---')
+                i = how_many * 5
+            elif i < (how_many * 6):
                 print('--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 21:
+                i = how_many * 6
+            elif i < (how_many * 7):
                 print('--- The given seed was used to derive Bitcoin addresses with Samourai PreMix derivation path m/84\'/0\'/2147483645\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 24:
+                i = how_many * 7
+            elif i < (how_many * 8):
                 print('--- The given seed was used to derive Bitcoin addresses with Samourai PostMix derivation path m/84\'/0\'2147483646\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
+                i = how_many * 8
             online_found = True
 #            i = 18
         else:
             i += 1
     # check ETH
     i = 0
-    while i < 6:
+    while i < len(eth_list):
         link = 'https://api.blockcypher.com/v1/eth/main/addrs/' + eth_list[i]
         eth_resp = requests.get(link)
         eth_resp = eth_resp.text
         eth_resp_dict = json.loads(eth_resp)
         if eth_resp_dict['n_tx'] != 0:
             online_found = True
-            if i < 3:
-                i = ((int(i/3)) * 3) + 3
+            if i < how_many:
+                i = how_many
                 print('--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0 ---')
-            elif i > 2:
-                i = ((int(i/3)) * 3) + 3
+            elif i > how_many * 2:
                 print('--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0\' ---')
+                break
         else:
             i += 1
     # check LTC
     i = 0
-    while i < 18:
+    while i < len(ltc_list):
         ltc_tx = blockcypher.get_total_num_transactions(ltc_list[i], coin_symbol='ltc')
         if ltc_tx != 0:
-            if i < 3:
+            if i < how_many:
                 print('--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 6:
+                i = how_many
+            elif i < (how_many * 2):
                 print('--- The given seed was used to derive Litecoin addresses with derivation path m/49\'/2\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 9:
+                i = (how_many * 2)
+            elif i < (how_many * 3):
                 print('--- The given seed was used to derive Litecoin addresses with derivation path m/84\'/2\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 12:
+                i = how_many * 3
+            elif i < (how_many * 4):
                 print('--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 15:
+                i = how_many * 4
+            elif i < (how_many * 5):
                 print('--- The given seed was used to derive Litecoin addresses with derivation path m/49\'/2\'/0\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 18:
+                i = how_many * 5
+            elif i < (how_many * 6):
                 print('--- The given seed was used to derive Litecoin addresses with derivation path m/84\'/2\'/0\'/0\' ---')
-                i = ((int(i/3)) * 3) + 3
+                i = how_many * 6
             online_found = True
 #            i = 18
         else:
             i += 1
     # Check DASH
     i = 0
-    while i < 6:
-        dash_tx = blockcypher.get_total_num_transactions(dash_list[i], coin_symbol='dash')
+    while i < len(dash_list):
+        dash_tx = blockcypher.get_total_num_transactions(
+            dash_list[i], coin_symbol='dash')
         if dash_tx != 0:
-            if i < 3:
+            if i < how_many:
                 print('--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
-            elif i < 6:
+                i = how_many
+            elif i < (how_many * 2):
                 print('--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---')
-                i = ((int(i/3)) * 3) + 3
+                i = how_many * 2
             online_found = True
-#            i = 6  
+#            i = 6
         else:
             i += 1
     # Check ZEC
     i = 0
-    while i < 6:
+    while i < len(zec_list):
         link = 'https://api.zcha.in/v2/mainnet/accounts/' + zec_list[i]
         zec_resp = requests.get(link)
         zec_resp = zec_resp.text
         zec_resp_dict = json.loads(zec_resp)
         if zec_resp_dict['firstSeen'] != 0:
             online_found = True
-            if i < 3:
-                i = ((int(i/3)) * 3) + 3
+            if i < how_many:
+                i = how_many
                 print('--- The given seed was used to derive ZCash addresses with derivation path m/44\'/133\'/0\'/0 ---')
-            elif i > 2:
-                i = 6
+            elif i < (how_many * 2):
+                i = how_many * 2
                 print('--- The given seed was used to derive ZCash addresses with derivation path m/44\'/133\'/0\'/0\' ---')
         else:
             i += 1
 
 if (online_found == False and is_bip39 == True):
     print('Bip39 derivation path not found\n')
-            
+
 # Printing if no derivation path gave addresses used online
 if (online_found == False and online_found_el == False and online_check == True and (is_bip39 == True or is_electrum == True)):
     print('It was not possible to determinate the derivation path used with the given seed or maybe it was never used')
@@ -694,4 +701,3 @@ if (is_monerocn or is_moneroen or is_moneroen2 or is_moneroes or is_moneroesp or
         print(f'- Public address: {xmr_addr}')
     if (s_lenght == 14 and seed[1] == 'poet'):
         print('---> The given seed could restore a Feather (Monero) wallet <---')
-        
