@@ -1,6 +1,7 @@
 # SeedCheck.py
 SeedCheck.py is a Python tool that tries  to determinate the derivation path a mnemonic seed was used with.
 It is part of the bigger project Anu₿itux: more info at https://anubitux.org.
+V2 relased: now user is able to decide how many addresses to derive and check.
 
 ## Overview
 It allows the user to insert a mnemonic seed with an eventual passphrase and generates addresses with many derivation algorithms.
