@@ -706,7 +706,7 @@ if (is_monerocn or is_moneroen or is_moneroen2 or is_moneroes or is_moneroesp or
         xmr_addr = s_xmr.public_address()
         print(f'- Secret View Key: {priv_v_k}')
         print(f'- Public address: {xmr_addr}')
-    if (s_lenght == 14 and seed[1] == 'poet'):
+    if (s_lenght == 14 and seed[1] == 'poem'):
         print('---> The given seed could restore a Feather (Monero) wallet <---')
         
         
