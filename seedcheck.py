@@ -12,9 +12,23 @@ from hdwallet.symbols import BTC, ETH, LTC, ZEC, DASH
 import blockcypher
 from monero.seed import Seed
 import os
+import time
 
 #Editi this line if you need to use a specific working directory
 #os.chdir('/home/working_path')
+
+
+class color:
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 
 
 # checks if given seed's words are in the available wordlist
@@ -219,7 +233,7 @@ def zec_list_der(lang, how_many):
     return zec_list
 
 
-print('\n=====================\n===   SeedCheck   ===\n=====================\n')
+print(color.YELLOW + '\n=====================\n===   SeedCheck   ===\n=====================\n' + color.END)
 print('The tool tries to identify how a mnemonic phrase has been used to generate a ')
 print('crypto wallet. It checks if the seed was used with Electrum (BTC) or if it was used')
 print('with a wallet using a BIP39 wordlist or if it was used with a Monero wallet.')
@@ -228,14 +242,14 @@ print('derivation path was used with the given seed. It supports BIP44, BIP49 an
 print('(also for Samourai premix and postmix wallets). It checks BTC, ETH, LTC, DASH and ZEC')
 print('with Monero it tries to determinate if the seed is associated with a Monero wallet,')
 print('a MyMonero wallet or a Feather wallet')
-print('\nDISCLAIMER: This tool is designed to help identifying a mnemonic seed but it should not be ')
+print(color.RED + '\nDISCLAIMER:' + color.END + ' This tool is designed to help identifying a mnemonic seed but it should not be ')
 print('considered as exhaustive. Always check the seeds with many wallets to be sure about them')
 print('\nPlease use only correct inputs. This tool was designed for serious persons\n')
 
 
 conn = is_connected()
 if conn:
-    print('Internet connection is available')
+    print(color.GREEN + 'Internet connection is available' + color.END)
     print('the tool will query apis about found addresses')
     agree = input('do you agree with that? (y/n)\n')
     if agree == 'y':
@@ -245,19 +259,19 @@ if conn:
         print('addresses will not be checked\n')
         online_check = False
     else:
-        print('\nunallowed answer, closing!\n')
+        print(color.RED + '\nunallowed answer, closing!\n' + color.END)
         quit()
 else:
-    print('Internet connection is not available')
+    print(color. RED + 'Internet connection is not available' + color.END)
     print('Found addresses will not be checked\n')
     online_check = False
 
-leng = input('Enter seed lenght (without counting the passphrase): ')
+leng = input(color.DARKCYAN + 'Enter seed lenght (without counting the passphrase): ' + color.END)
 s_lenght = int(leng)
 if ((s_lenght % 3 == 0) or (s_lenght == 13) or (s_lenght == 14) or (s_lenght == 25)):
     print('lenght accepted')
 else:
-    print('Unallowed seed lenght. Be sure to count only the seed words, without passphrase')
+    print(color.RED + 'Unallowed seed lenght. Be sure to count only the seed words, without passphrase' + color.END)
     quit()
 seed = []  # stores the seed as a list
 i = 0
@@ -266,7 +280,7 @@ while(i < s_lenght):
     i += 1
     w = input(f'Insert the {i} word: ')
     seed.append(w)
-ans = input('Does the seed have a passphrase?(y/n)\n')
+ans = input(color.DARKCYAN + 'Does the seed have a passphrase?(y/n)\n' + color.END)
 if (ans == 'y' or ans == 'Y'):
     passphrase = input('Insert passphrase: ')
     p = 1
@@ -276,12 +290,11 @@ elif (ans == 'n' or ans == 'N'):
 else:
     print('No correct answer provided, proceding without passphrase')
     passphrase = ''
-lan = input(
-    'What is the language of the seed? (if unknown type all)\nfor spaces use _\n')
+lan = input(color.DARKCYAN + 'What is the language of the seed? (if unknown type all)\nfor spaces use _\n' + color.END)
 lan.lower()  # makes the string lowercase to make it easier to check only correct wordlists
 seed_str = ' '.join(seed)
 # Define how many addresses to derive and check online
-how_many = input('how many addresses do you want to be derived?\n')
+how_many = input(color.DARKCYAN + 'how many addresses do you want to be derived?\n' + color.END)
 how_many = int(how_many)
 if (how_many > 15 and online_check == True):
     print('You are going to check a lot of addresses. This could overload APIs.')
@@ -391,7 +404,7 @@ if (is_electrumen or is_electrumcn or is_electrumes or is_electrumjp or is_elect
             elec_addr.append(electrum_derive(
                 seed_str, passphrase, index, 'p2wpkh'))
             index += 1
-        print('Found Electrum addresses:')
+        print(color.GREEN + 'Found Electrum addresses:' + color.END)
         index = 0
         while (index < how_many):
             print(elec_addr[index])
@@ -403,13 +416,13 @@ if (is_electrumen or is_electrumcn or is_electrumes or is_electrumjp or is_elect
             elec_addr.append(electrum_derive(
                 seed_str, passphrase, index, 'p2pkh'))
             index += 1
-        print('Found Electrum addresses (first 10):')
+        print(color.GREEN + 'Found Electrum addresses (first 10):' + color.END)
         index = 0
         while (index < how_many):
             print(elec_addr[index])
             index += 1
     else:
-        print('\nThis seed is not supported with Electrum')
+        print(color.RED + '\nThis seed is not supported with Electrum' + color.END)
         print('Words could be derived from an Electrum wordlist')
         print('To be sure, try it in an Electrum client\n')
         is_electrum = False
@@ -418,7 +431,7 @@ if (is_electrumen or is_electrumcn or is_electrumes or is_electrumjp or is_elect
 # checking if address derived with Electrum have been used
 online_found_el = False
 if (is_electrum and online_check):
-    print('\nchecking electrum addresses online')
+    print(color.DARKCYAN + '\nchecking electrum addresses online' + color.END)
     index = 0
     check_used = 1
     # consider using variable to decide number of address to generate
@@ -430,10 +443,10 @@ if (is_electrum and online_check):
             index += 1
         else:
             check_used = 0
-            print('\n---> The entered seed has activity with Electrum <---\n')
+            print(color.GREEN + '\n---> The entered seed has activity with Electrum <---\n' + color.END)
             online_found_el = True
     if (data == '0' and index == 9):
-        print('seed is compatible with electrum but seems to be unused (with btc)')
+        print(color.RED + 'seed is compatible with electrum but seems to be unused (with btc)' + color.END)
 
 if (is_electrum == True and online_check == False):
     print('\n ---> Use block explorers to verifiy if the addresses were used <---\n')
@@ -520,8 +533,7 @@ if (is_bip39pr):
 
 # Printing Bip39 derived addresses
 if is_bip39:
-    print('---> All BIP39 derived address <---')
-    print('- Bitcoin addresses -')
+    print(color.GREEN + '---> All BIP39 derived address <---' + color.END)
     print('BIP44')
     i = 0
     while i < len(btc_list):
@@ -562,47 +574,48 @@ if is_bip39:
         i += 1
 
 if (is_bip39 == True and online_check == False):
-    print('\n ---> Use block explorers to verifiy if the addresses were used <---\n')
+    print(color.DARKCYAN + '\n ---> Use block explorers to verifiy if the addresses were used <---\n' + color.END)
 
 # Checking Bip39 addresses online
 online_found = False  # if True address was found used and a message will be shown
 if (is_bip39 and online_check):
-    print('\nchecking bip39 derived addresses online')
+    print(color.DARKCYAN + '\nchecking bip39 derived addresses online' + color.END)
     #check BTC
     i = 0
     while i < len(btc_list):
         link = 'https://blockchain.info/q/addressfirstseen/' + btc_list[i]
+        time.sleep(400/1000)
         used = requests.get(link)
         data = used.text    # gives a string
         if data != '0':
             if i < how_many:
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0 ---' + color.END)
 #                i = ((int(i/how_many)) * how_many) + how_many
                 i = how_many
             elif i < (how_many * 2):
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0\' ---' + color.END)
  #               print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0 ---')
                 i = how_many * 2
             elif i < (how_many * 3):
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0 ---' + color.END)
                # print('--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0 ---')
                 i = how_many * 3
             elif i < (how_many * 4):
               #  print('--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0\' ---')
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0\' ---' + color.END)
                 i = how_many * 4
             elif i < (how_many * 5):
              #   print('--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0\' ---')
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0 ---' + color.END)
                 i = how_many * 5
             elif i < (how_many * 6):
-                print('--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/84\'/0\'/0\'/0\' ---' + color.END)
                 i = how_many * 6
             elif i < (how_many * 7):
-                print('--- The given seed was used to derive Bitcoin addresses with Samourai PreMix derivation path m/84\'/0\'/2147483645\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with Samourai PreMix derivation path m/84\'/0\'/2147483645\'/0\' ---' + color.END)
                 i = how_many * 7
             elif i < (how_many * 8):
-                print('--- The given seed was used to derive Bitcoin addresses with Samourai PostMix derivation path m/84\'/0\'2147483646\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with Samourai PostMix derivation path m/84\'/0\'2147483646\'/0\' ---' + color.END)
                 i = how_many * 8
             online_found = True
 #            i = 18
@@ -613,15 +626,16 @@ if (is_bip39 and online_check):
     while i < len(eth_list):
         link = 'https://api.blockcypher.com/v1/eth/main/addrs/' + eth_list[i]
         eth_resp = requests.get(link)
+        time.sleep(400/1000)
         eth_resp = eth_resp.text
         eth_resp_dict = json.loads(eth_resp)
         if eth_resp_dict['n_tx'] != 0:
             online_found = True
             if i < how_many:
                 i = how_many
-                print('--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0 ---' + color.END)
             elif i > how_many * 2:
-                print('--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0\' ---' + color.END)
                 break
         else:
             i += 1
@@ -629,24 +643,25 @@ if (is_bip39 and online_check):
     i = 0
     while i < len(ltc_list):
         ltc_tx = blockcypher.get_total_num_transactions(ltc_list[i], coin_symbol='ltc')
+        time.sleep(400/1000)
         if ltc_tx != 0:
             if i < how_many:
-                print('--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0 ---' + color.END)
                 i = how_many
             elif i < (how_many * 2):
-                print('--- The given seed was used to derive Litecoin addresses with derivation path m/49\'/2\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/49\'/2\'/0\'/0 ---' + color.END)
                 i = (how_many * 2)
             elif i < (how_many * 3):
-                print('--- The given seed was used to derive Litecoin addresses with derivation path m/84\'/2\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/84\'/2\'/0\'/0 ---' + color.END)
                 i = how_many * 3
             elif i < (how_many * 4):
-                print('--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0\' ---' + color.END)
                 i = how_many * 4
             elif i < (how_many * 5):
-                print('--- The given seed was used to derive Litecoin addresses with derivation path m/49\'/2\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/49\'/2\'/0\'/0\' ---' + color.END)
                 i = how_many * 5
             elif i < (how_many * 6):
-                print('--- The given seed was used to derive Litecoin addresses with derivation path m/84\'/2\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/84\'/2\'/0\'/0\' ---' + color.END)
                 i = how_many * 6
             online_found = True
 #            i = 18
@@ -657,12 +672,13 @@ if (is_bip39 and online_check):
     while i < len(dash_list):
         dash_tx = blockcypher.get_total_num_transactions(
             dash_list[i], coin_symbol='dash')
+        time.sleep(400/1000)
         if dash_tx != 0:
             if i < how_many:
-                print('--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---' + color.END)
                 i = how_many
             elif i < (how_many * 2):
-                print('--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---' + color.END)
                 i = how_many * 2
             online_found = True
 #            i = 6
@@ -673,40 +689,43 @@ if (is_bip39 and online_check):
     while i < len(zec_list):
         link = 'https://api.zcha.in/v2/mainnet/accounts/' + zec_list[i]
         zec_resp = requests.get(link)
+        time.sleep(400/1000)
         zec_resp = zec_resp.text
         zec_resp_dict = json.loads(zec_resp)
         if zec_resp_dict['firstSeen'] != 0:
             online_found = True
             if i < how_many:
                 i = how_many
-                print('--- The given seed was used to derive ZCash addresses with derivation path m/44\'/133\'/0\'/0 ---')
+                print(color.GREEN + '--- The given seed was used to derive ZCash addresses with derivation path m/44\'/133\'/0\'/0 ---' + color.END)
             elif i < (how_many * 2):
                 i = how_many * 2
-                print('--- The given seed was used to derive ZCash addresses with derivation path m/44\'/133\'/0\'/0\' ---')
+                print(color.GREEN + '--- The given seed was used to derive ZCash addresses with derivation path m/44\'/133\'/0\'/0\' ---' + color.END)
         else:
             i += 1
 
 if (online_found == False and is_bip39 == True):
-    print('Bip39 derivation path not found\n')
+    print(color.RED + 'Bip39 derivation path not found\n' + color.END)
 
 # Printing if no derivation path gave addresses used online
 if (online_found == False and online_found_el == False and online_check == True and (is_bip39 == True or is_electrum == True)):
-    print('It was not possible to determinate the derivation path used with the given seed or maybe it was never used')
+    print(color.RED + 'It was not possible to determinate the derivation path used with the given seed or maybe it was never used' + color.END)
 
 # Checkink Monero
 if (is_monerocn or is_moneroen or is_moneroen2 or is_moneroes or is_moneroesp or is_monerofr or is_moneroit or is_monerojp or is_monerolo or is_moneropr or is_moneroru):
     if s_lenght == 25 or s_lenght == 13:
         is_monero = True
         s_xmr = Seed(seed_str)
-        print('---> The given seed could restore a Monero wallet <---')
+        print(color.GREEN + '---> The given seed could restore a Monero wallet <---' + color.END)
         is_mym = s_xmr.is_mymonero()
         if is_mym == True:
-            print('---> It could be used with MyMonero wallet <---')
+            print(color.GREEN + '---> It could be used with MyMonero wallet <---' + color.END)
         priv_v_k = s_xmr.secret_view_key()
         xmr_addr = s_xmr.public_address()
         print(f'- Secret View Key: {priv_v_k}')
         print(f'- Public address: {xmr_addr}')
     if (s_lenght == 14 and seed[1] == 'poem'):
-        print('---> The given seed could restore a Feather (Monero) wallet <---')
+        print(color.GREEN + '---> The given seed could restore a Feather (Monero) wallet <---' + color.END)
+        print('14 words seeds were generated by the previous version of feather wallet but are still supported by version 2')
+        print('version 2 generates seeds with 16 words\n')
         
         
