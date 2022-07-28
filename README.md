@@ -119,4 +119,7 @@ When a derivation path is found, I suggest to try it with some kind of multicurr
 - check Monero addresses' activity
 - add support to new Feather Wallet's seeds using Polyseed based on BIP 39
 
-
+## Credits & Donations
+If you appreciate this work visit https://anubitux.org and consider making a donation
+- BTC: 1AnUbiYpuFsGrc1JFxFCh5K9tXFd1BXPg
+- XMR: 87PTU58siKNb3WWXcP4Hq4CmCb7kMQUsEiUWFT7SvvMMUqVw9XXFGrJZqmnGvuJLGtLoRuEqovTG4SWqkPr8YLopTSxZkkL
