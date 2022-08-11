@@ -98,6 +98,26 @@ In this case, just install the missing package shown in the error message with
 pip3 install {missing_package_name}
 ```
 
+## Troubleshooting
+The tool may encounter some issues running with Ubuntu 22.04, due to incompatibility with ripemd160 hashes used by the hdwallet library.
+To solve this you need to edit the /etc/ssl/openssl.cnf file, making sure that it contains all the following lines:
+```
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+legacy = legacy_sect
+
+[default_sect]
+activate = 1
+
+[legacy_sect]
+activate = 1
+```
+
 ## Additional tips
 If you want to launch the tool as a single command in your terminal adding it to your PATH, you need to specify the tools folder changing the working directory of the tool in the seedcheck.py file. Go to line 16-17, edit the chdir command and uncomment it.
 
