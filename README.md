@@ -66,7 +66,7 @@ Now clone the github repository
 ```
 git clone https://github.com/ASeriousMister/SeedCheck.py
 ```
-and install python virtual enviroments
+and install python virtual environments
 ```
 pip3 install virtualenv
 ```
@@ -74,7 +74,7 @@ Now move to SeedCheck.py's directory,
 ```
 cd SeedCheck.py
 ```
-create a virtual enviroment (in the example named scve, but you can choose your preferred name)
+create a virtual environment (in the example named scve, but you can choose your preferred name)
 ```
 virtualenv scve
 ```
@@ -82,7 +82,7 @@ and activate it
 ```
 source scve/bin/activate
 ```
-The name of the virtual enviroment should appear, in brackets, on the left of your command line. 
+The name of the virtual environment should appear, in brackets, on the left of your command line. 
 Now you can install the dependencies
 ```
 sudo apt install python3-pyqt5 libsecp256k1-0 python3-cryptography
