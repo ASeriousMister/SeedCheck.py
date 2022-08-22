@@ -7,6 +7,9 @@ V2 relased: now user is able to decide how many addresses to derive and check.
 It allows the user to insert a mnemonic seed with an eventual passphrase and generates addresses with many derivation algorithms.
 After deriving the addresses, it tries to look them up using apis of public block explorers, to verify if they were involved in transactions and determinate the correct derivation path. This feature is optional because users may not trust public block explorers and prefer to look up addresses in a different way.
 
+## Tutorial
+[Here](https://anubitux.org/find-out-how-a-seed-was-used-with-anubitux/) you can see how the tool works.
+
 ## Supported derivations
 The tool supports the following coins with the indicated derivation paths:
 ### Bitcoin
