@@ -17,6 +17,7 @@ import time
 #Editi this line if you need to use a specific working directory
 #os.chdir('/home/working_path')
 
+blockcypherAPI = None   # if available, put your blockcypher API key here
 
 class color:
     PURPLE = '\033[95m'
@@ -81,7 +82,7 @@ def add_der(sym, lang, seedl, psph, bip, coin, num, is_hardened):
         return hdwallet.p2wpkh_in_p2sh_address()
 
 
-# uses custom derivation paths used by samourai wallet
+# Custom derivation paths used by samourai wallet
 def sam_der(lang, seedl, psph, mix, num, is_hardened):
     hdwallet: HDWallet = HDWallet(symbol=BTC)
     hdwallet.from_mnemonic(mnemonic=seedl, passphrase=psph, language=lang)
@@ -103,7 +104,7 @@ def is_connected(host='http://google.com'):
         return False
 
 
-# Creates list with addresses derived in the specifued language
+# Creates list with addresses derived in the specified language
 def btc_list_der(lang, how_many):
     btc_list = []
     # bitcoin bip44 not hardened addresses
@@ -642,8 +643,9 @@ if (is_bip39 and online_check):
     # check LTC
     i = 0
     while i < len(ltc_list):
-        ltc_tx = blockcypher.get_total_num_transactions(ltc_list[i], coin_symbol='ltc')
-        time.sleep(400/1000)
+        ltc_tx = blockcypher.get_total_num_transactions(ltc_list[i], coin_symbol='ltc', api_key=blockcypherAPI)
+        if blockcypherAPI is None:
+            time.sleep(400/1000)
         if ltc_tx != 0:
             if i < how_many:
                 print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0 ---' + color.END)
@@ -670,9 +672,9 @@ if (is_bip39 and online_check):
     # Check DASH
     i = 0
     while i < len(dash_list):
-        dash_tx = blockcypher.get_total_num_transactions(
-            dash_list[i], coin_symbol='dash')
-        time.sleep(400/1000)
+        dash_tx = blockcypher.get_total_num_transactions(dash_list[i], coin_symbol='dash', api_key=blockcypherAPI)
+        if blockcypherAPI is None:
+            time.sleep(400/1000)
         if dash_tx != 0:
             if i < how_many:
                 print(color.GREEN + '--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---' + color.END)
