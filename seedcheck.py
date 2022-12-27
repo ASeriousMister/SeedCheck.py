@@ -402,8 +402,7 @@ if (is_electrumen or is_electrumcn or is_electrumes or is_electrumjp or is_elect
         index = 0
         elec_addr = []
         while (index < how_many):
-            elec_addr.append(electrum_derive(
-                seed_str, passphrase, index, 'p2wpkh'))
+            elec_addr.append(electrum_derive(seed_str, passphrase, index, 'p2wpkh'))
             index += 1
         print(color.GREEN + 'Found Electrum addresses:' + color.END)
         index = 0
@@ -417,7 +416,7 @@ if (is_electrumen or is_electrumcn or is_electrumes or is_electrumjp or is_elect
             elec_addr.append(electrum_derive(
                 seed_str, passphrase, index, 'p2pkh'))
             index += 1
-        print(color.GREEN + 'Found Electrum addresses (first 10):' + color.END)
+        print(color.GREEN + 'Found Electrum addresses:' + color.END)
         index = 0
         while (index < how_many):
             print(elec_addr[index])
@@ -436,9 +435,10 @@ if (is_electrum and online_check):
     index = 0
     check_used = 1
     # consider using variable to decide number of address to generate
-    while (check_used and index < 10):
+    while (check_used and index < how_many):
         link = 'https://blockchain.info/q/addressfirstseen/' + elec_addr[index]
         used = requests.get(link)
+        time.sleep(400/1000)
         data = used.text    # gives a string
         if data == '0':
             index += 1
