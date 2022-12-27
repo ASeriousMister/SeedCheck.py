@@ -86,19 +86,26 @@ and activate it
 source scve/bin/activate
 ```
 The name of the virtual environment should appear, in brackets, on the left of your command line. 
-Now you can install the dependencies
+Now you can install the dependencies:
 ```
 sudo apt install python3-pyqt5 libsecp256k1-0 python3-cryptography
 pip3 install -r requirements.txt
 ```
-Finally, you are ready to run the tool
-```
-python3 seedcheck.py
-```
+Finally, you are ready to run the tool.
 Sometimes pip may not install the packages listed in requirements.txt in the proper way.
 In this case, just install the missing package shown in the error message with
 ```
 pip3 install {missing_package_name}
+```
+## Running the tool
+Finally, you are ready to run the tool.
+The tool can be executed in normal mode. This way the tool is going to ask questions about the seed to check.
+```
+python3 seedcheck.py
+```
+The tool can also be executed providing a list of seeds to check (one for each line). It will iterate through the lines and automatically check all the seeds.
+```
+python3 seedchecklist.py -f /home/username/folder/list.txt
 ```
 
 ## Troubleshooting
