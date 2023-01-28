@@ -634,9 +634,9 @@ if (is_bip39 and online_check):
             online_found = True
             if i < how_many:
                 i = how_many
-                print(color.GREEN + '--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0 ---' + color.END)
+                print(color.GREEN + '--- The given seed was used to derive Ethereum addresses with derivation path m/44\'/60\'/0\'/0 ---' + color.END)
             elif i > how_many * 2:
-                print(color.GREEN + '--- The given seed was used to derive Electrum addresses with derivation path m/44\'/60\'/0\'/0\' ---' + color.END)
+                print(color.GREEN + '--- The given seed was used to derive Ethereum addresses with derivation path m/44\'/60\'/0\'/0\' ---' + color.END)
                 break
         else:
             i += 1
