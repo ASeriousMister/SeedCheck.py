@@ -195,9 +195,6 @@ if lang_false:
     exit()
 
 # Check if provided mnemonic is valid as BIP39 mnemonic or Electrum mnemonic
-is_bip39 = is_mnemonic(seed_str, language)
-if is_bip39:
-    print(color.GREEN + 'The provided mnemonic respects the BIP39 standard' + color.END)
 electrum_type = mnemonic.seed_type(seed_str)
 is_electrum = False
 if electrum_type == 'segwit':
@@ -206,6 +203,14 @@ if electrum_type == 'segwit':
 if electrum_type == 'standard':
     print(color.GREEN + 'The provided mnemonic is related to and Electrum legacy wallet' + color.END)
     is_electrum = True
+    
+if (is_electrum == False and language == 'portuguese') or (language == 'czech'):
+    exit(color.RED + f'Sorry, {language} is not supported at the moment :(' + color.END)
+    
+is_bip39 = is_mnemonic(seed_str, language)
+if is_bip39:
+    print(color.GREEN + 'The provided mnemonic respects the BIP39 standard' + color.END)
+    
 if (is_bip39 is False) and (is_electrum is False):
     exit(color.RED + 'The provided mnemonic phrase is not valid' + color.END)
 
