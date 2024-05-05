@@ -13,3 +13,6 @@ blockcypher
 pynacl
 varint
 argparse
+jsonpatch
+packaging
+protobuf
