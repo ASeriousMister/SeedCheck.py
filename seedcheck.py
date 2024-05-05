@@ -14,8 +14,8 @@ import time
 from hdwallet.symbols import BTC
 from hdwallet.utils import is_mnemonic
 
-#Editi this line if you need to use a specific working directory
-#os.chdir('/home/working_path')
+# Edit this line if you need to use a specific working directory
+# os.chdir('/home/working_path')
 
 blockcypherAPI = None   # if available, put your blockcypher API key here
 
@@ -106,8 +106,7 @@ def check_lang(mnemo_word):
 def electrum_derive(seedl, passw, address_index, dertype):
     # derives addresses with electrum's derivation
     change = False
-    is_p2sh = False
-    k = keystore.from_seed(seedl, passw, is_p2sh)  # '' for passphrase
+    k = keystore.from_seed(seedl, passphrase=passw, for_multisig=False)  # '' for passphrase
     l = k.derive_pubkey(change, address_index)
     if dertype == 'p2wpkh':
         addr = bitcoin.public_key_to_p2wpkh(l)
@@ -121,8 +120,7 @@ def electrum_derive(seedl, passw, address_index, dertype):
 def electrum_change_derive(seedl, passw, address_index, dertype):
     # derives addresses with electrum's derivation
     change = True
-    is_p2sh = False
-    k = keystore.from_seed(seedl, passw, is_p2sh)  # '' for passphrase
+    k = keystore.from_seed(seedl, passphrase=passw, for_multisig=False)  # '' for passphrase
     l = k.derive_pubkey(change, address_index)
     if dertype == 'p2wpkh':
         addr = bitcoin.public_key_to_p2wpkh(l)
@@ -410,7 +408,7 @@ if is_electrum:
             elec_addr.append(electrum_derive(seed_str, passphr, index, 'p2wpkh'))
             print(elec_addr[index])
             index += 1
-        elec_addr.append(electrum_change_derive(seed_str, passphr, index, 'p2wpkh'))
+        elec_addr.append(electrum_change_derive(seed_str, passphr, 0, 'p2wpkh'))
         print('First change address: ' + elec_addr[-1])
     elif electrum_type == 'standard':
         index = 0
@@ -418,7 +416,7 @@ if is_electrum:
             elec_addr.append(electrum_derive(seed_str, passphr, index, 'p2pkh'))
             print(elec_addr[index])
             index += 1
-        elec_addr.append(electrum_change_derive(seed_str, passphr, index, 'p2pkh'))
+        elec_addr.append(electrum_change_derive(seed_str, passphr, 0, 'p2pkh'))
         print('First change address: ' + elec_addr[-1])
 
 # Check addresses online
@@ -529,5 +527,5 @@ if (online_found == False and is_bip39 == True):
 
 if (elec_found == False and is_electrum == True):
     print(color.RED + 'The seed is related to an Electrum wallet but seems to be unused')
-    print('Maybe you should try it with some altcoin Electrum version' + color.END)
+    print('Maybe you should try it with some altcoin versions of Electrum' + color.END)
     
