@@ -51,9 +51,7 @@ The tool supports the following coins with the indicated derivation paths:
 - Feather wallet
 
 ## Installation
-The tool was tested in Ubuntu 20.04 with Python3.8.
-I suggest to run the tool in its own virtual environment.
-Python shoul be installed by default. If not so, update your repositories
+The tool was tested in Ubuntu 20.04 with Python3.8, Debian 11 with python 3.9 and Debian 12 with python 3.11. 
 ```
 sudo apt update
 ```
