@@ -52,7 +52,7 @@ The tool supports the following coins with the indicated derivation paths:
 
 ## Installation
 The tool was tested in Ubuntu 20.04 with Python3.8.
-I suggest tu run the tool in his own virtual enviroment.
+I suggest to run the tool in its own virtual environment.
 Python shoul be installed by default. If not so, update your repositories
 ```
 sudo apt update
@@ -89,6 +89,11 @@ The name of the virtual environment should appear, in brackets, on the left of y
 Now you can install the dependencies:
 ```
 sudo apt install python3-pyqt5 libsecp256k1-0 python3-cryptography
+pip3 install -r requirements.txt
+```
+In Debian 12 run
+```
+sudo apt install python3-pyqt5 libsecp256k1-1 python3-cryptography protobuf-compiler
 pip3 install -r requirements.txt
 ```
 Finally, you are ready to run the tool.
