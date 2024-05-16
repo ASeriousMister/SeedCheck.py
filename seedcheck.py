@@ -316,7 +316,8 @@ if is_bip39:
     while index < der:
         hdwallet: HDWallet = HDWallet(symbol=ETH)
         hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/44'/60'/0'/0/" + str(index))
+        hdwallet.from_path("m/44'/60'/" + str(index) + "'/0/0")
+#        hdwallet.from_path("m/44'/60'/0'/0/" + str(index))
         eth_list.append(hdwallet.p2pkh_address())
         print(eth_list[-1])
         index += 1
