@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
+"""
+SeedCheck - Cryptocurrency Mnemonic Identifier and Wallet Derivation Tool
+Refactored to use bip-utils and direct public RPC / Electrum Stratum servers.
+"""
 
-from electrum import bitcoin
-from electrum import keystore
-from electrum import mnemonic
-import urllib.request
-import requests
+import sys
+import argparse
+import socket
+import ssl
 import json
-from hdwallet import HDWallet
-from hdwallet.symbols import BTC, ETH, LTC, ZEC, DASH
-import blockcypher
-import os
-import time
-from hdwallet.symbols import BTC
-from hdwallet.utils import is_mnemonic
+import hashlib
+import requests
+from typing import Optional, Tuple, Dict, Any, List
 
-# Edit this line if you need to use a specific working directory
-# os.chdir('/home/working_path')
+from bip_utils import (
+    Bip39MnemonicValidator, Bip39SeedGenerator, Bip39Languages,
+    Bip44, Bip44Coins, Bip44Changes,
+    Bip49, Bip49Coins,
+    Bip84, Bip84Coins,
+    ElectrumV1MnemonicValidator, ElectrumV1,
+    ElectrumV2MnemonicValidator, ElectrumV2Standard, ElectrumV2Segwit, ElectrumV2MnemonicTypes,
+    MoneroMnemonicValidator, MoneroSeedGenerator, Monero,
+    Base58Decoder, SegwitBech32Decoder
+)
 
-blockcypherAPI = None   # if available, put your blockcypher API key here
-
-class color:
+class Colors:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
     DARKCYAN = '\033[36m'
@@ -31,502 +36,426 @@ class color:
     UNDERLINE = '\033[4m'
     END = '\033[0m'
 
+# ==========================================
+# PUBLIC SERVERS & RPCs
+# ==========================================
 
-# check if online or apis will not be available
-def is_connected(host='http://google.com'):
+ELECTRUM_SERVERS = {
+    'BTC': [
+        ('electrum.blockstream.info', 50002, True),
+        ('btc.curalle.ovh', 50002, True),
+        ('electrum.emzy.de', 50002, True)
+    ],
+    'LTC': [
+        ('electrum-ltc.bysh.me', 50002, True),
+        ('ltc.curalle.ovh', 50002, True)
+    ],
+    'DASH': [
+        ('electrum.dash.siampm.com', 50002, True),
+        ('dash.curalle.ovh', 50002, True)
+    ]
+}
+
+EVM_RPCS = [
+    'https://cloudflare-eth.com',
+    'https://rpc.ankr.com/eth',
+    'https://ethereum.publicnode.com'
+]
+
+SOLANA_RPCS = [
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-mainnet.rpc.extrnode.com'
+]
+
+TRON_API = 'https://api.trongrid.io/v1/accounts'
+
+# ==========================================
+# ONLINE CHECKERS
+# ==========================================
+
+def address_to_scripthash(address: str) -> Optional[str]:
+    """Computes Electrum 2.0 scripthash (SHA256(scriptPubKey) reversed)."""
     try:
-        urllib.request.urlopen(host)
-        return True
-    except:
-        return False
-
-
-def check_lang(mnemo_word):
-    f = open('Wordlists/b39en')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'english'
-    f = open('Wordlists/elen')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'english'
-    f = open('Wordlists/b39it')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'italian'
-    f = open('Wordlists/b39cn')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'chinese_traditional'
-    f = open('Wordlists/elcn')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'chinese_traditional'
-    f = open('Wordlists/b39cn2')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'chinese_simplified'
-    f = open('Wordlists/b39cz')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'czech'
-    f = open('Wordlists/b39es')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'spanish'
-    f = open('Wordlists/b39fr')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'french'
-    f = open('Wordlists/b39jp')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'japanese'
-    f = open('Wordlists/b39kr')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'korean'
-    f = open('Wordlists/b39pr')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'portuguese'
-    f = open('Wordlists/eles')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'spanish'
-    f = open('Wordlists/eljp')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'japanese'
-    f = open('Wordlists/elpr')
-    if ('\n' + mnemo_word + '\n') in f.read():
-        f.close()
-        return 'portuguese'
-
-def electrum_derive(seedl, passw, address_index, dertype):
-    # derives addresses with electrum's derivation
-    change = False
-    k = keystore.from_seed(seedl, passphrase=passw, for_multisig=False)  # '' for passphrase
-    l = k.derive_pubkey(change, address_index)
-    if dertype == 'p2wpkh':
-        addr = bitcoin.public_key_to_p2wpkh(l)
-        return addr
-    elif dertype == 'p2pkh':
-        addr = bitcoin.public_key_to_p2pkh(l)
-        return addr
-#    elif dertype == 'p2wpkh-p2sh':      implement
-
-
-def electrum_change_derive(seedl, passw, address_index, dertype):
-    # derives addresses with electrum's derivation
-    change = True
-    k = keystore.from_seed(seedl, passphrase=passw, for_multisig=False)  # '' for passphrase
-    l = k.derive_pubkey(change, address_index)
-    if dertype == 'p2wpkh':
-        addr = bitcoin.public_key_to_p2wpkh(l)
-        return addr
-    elif dertype == 'p2pkh':
-        addr = bitcoin.public_key_to_p2pkh(l)
-        return addr
-#    elif dertype == 'p2wpkh-p2sh':      implement
-
-
-print(color.YELLOW + '\n=====================\n===   SeedCheck   ===\n=====================\n' + color.END)
-print('The tool tries to identify how a mnemonic phrase has been used to generate a ')
-print('crypto wallet. It checks if the seed was used with Electrum (BTC) or if it was used')
-print('with a wallet using a BIP39 wordlist or if it was used with a Monero wallet.')
-print('It is also able to check online if the addresses have been used to determinate which')
-print('derivation path was used with the given seed. It supports BIP44, BIP49 and BIP84 derivation')
-print('(also for Samourai postmix wallets). It checks BTC, ETH, LTC, DASH and ZEC')
-print('with Monero it tries to determinate if the seed is associated with a Monero wallet,')
-print('a MyMonero wallet or a Feather wallet')
-print(color.RED + '\nDISCLAIMER:' + color.END + ' This tool is designed to help identifying a mnemonic seed but it should not be ')
-print('considered as exhaustive. Always check the seeds with many wallets to be sure about them')
-print('\nPlease use only correct inputs. This tool was designed for serious persons\n')
-
-# Check if connection is available and ask user for authorisation to query APIs
-conn = is_connected()
-if conn:
-    print(color.GREEN + 'Internet connection is available' + color.END)
-    print('the tool will query apis about found addresses')
-    tour0 = True
-    while tour0:
-        agree = input('do you agree with that? (y/n)\n')
-        if agree == 'y':
-            print('Addresses will be checked\n')
-            online_check = True
-            tour0 = False
-        elif agree == 'n':
-            print('addresses will not be checked\n')
-            online_check = False
-            tour0 = False
+        if address.startswith('bc1q') or address.startswith('ltc1q'):
+            hrp = address[:address.find('1')]
+            _, prog = SegwitBech32Decoder.Decode(hrp, address)
+            script = bytes([0x00, len(prog)]) + bytes(prog)
+        elif address.startswith('3') or address.startswith('M'):
+            raw = Base58Decoder.CheckDecode(address)[1:]
+            script = bytes([0xa9, 0x14]) + raw + bytes([0x87])
         else:
-            print(color.RED + '\nUnallowed answer, closing!\n' + color.END)
-else:
-    print(color. RED + 'Internet connection is not available' + color.END)
-    print('Found addresses will not be checked\n')
-    online_check = False
+            raw = Base58Decoder.CheckDecode(address)[1:]
+            script = bytes([0x76, 0xa9, 0x14]) + raw + bytes([0x88, 0xac])
+        h = hashlib.sha256(script).digest()
+        return h[::-1].hex()
+    except Exception:
+        return None
 
-seed_str = input(color.DARKCYAN + 'Please paste (Ctrl + Shift + V) or type mnemonic to check (excluding passphrase)\n' + color.END)
-seed_l = seed_str.split(' ')
-language = check_lang(seed_l[0])
-language1 = check_lang(seed_l[-1])
-lang_false = False # to use to handle exit if language check fails
-if language == language1:
-    print(color.GREEN + f'Detected {language} language' + color.END)
-else:
-    print(color.RED + 'could not detect language' + color.END)
-    lang_false = True
-wn = len(seed_l) # words number, length of the mnemonic
-if wn == 25:
-    print(color.GREEN + 'seed could have been used with Monero Wallet (GUI or CLI)' + color.END)
-elif wn == 13:
-    print(color.GREEN + 'seed could have been used with MyMonero' + color.END)
-elif wn == 14 and seed_l[1] == 'poem':
-    print(color.GREEN + 'seed could have been used with Feather Wallet 1.x' + color.END)
-elif wn == 16:
-    print(color.GREEN + 'seed could have been used with Feather Wallet 2.x' + color.END)
-elif wn % 3 != 0:
-    exit(color.RED + 'Something seems to be wrong with the number of words' + color.END)
+def check_electrum_stratum(coin: str, address: str) -> Tuple[int, int]:
+    """Queries Electrum server for (balance_sats, tx_count)."""
+    scripthash = address_to_scripthash(address)
+    if not scripthash:
+        return 0, 0
 
-if lang_false:
-    exit()
+    servers = ELECTRUM_SERVERS.get(coin, [])
+    for host, port, use_ssl in servers:
+        try:
+            sock = socket.create_connection((host, port), timeout=3)
+            if use_ssl:
+                ctx = ssl.create_default_context()
+                sock = ctx.wrap_socket(sock, server_hostname=host)
 
-# Check if provided mnemonic is valid as BIP39 mnemonic or Electrum mnemonic
-electrum_type = mnemonic.seed_type(seed_str)
-is_electrum = False
-if electrum_type == 'segwit':
-    print(color.GREEN + 'The provided mnemonic is related to and Electrum segwit wallet' + color.END)
-    is_electrum = True
-if electrum_type == 'standard':
-    print(color.GREEN + 'The provided mnemonic is related to and Electrum legacy wallet' + color.END)
-    is_electrum = True
-    
-if (is_electrum == False and language == 'portuguese') or (language == 'czech'):
-    exit(color.RED + f'Sorry, {language} is not supported at the moment :(' + color.END)
-    
-is_bip39 = is_mnemonic(seed_str, language)
-if is_bip39:
-    print(color.GREEN + 'The provided mnemonic respects the BIP39 standard' + color.END)
-    
-if (is_bip39 is False) and (is_electrum is False):
-    exit(color.RED + 'The provided mnemonic phrase is not valid' + color.END)
+            req_bal = json.dumps({"id": 1, "method": "blockchain.scripthash.get_balance", "params": [scripthash]}) + "\n"
+            sock.sendall(req_bal.encode())
+            res_bal = json.loads(sock.recv(4096).decode())
+            confirmed = res_bal.get("result", {}).get("confirmed", 0)
 
-# How many addresses does user want to print and check
-print(color.DARKCYAN + 'How many addresses do you want to check for each derivation path?' + color.END)
-tour1 = True
-while tour1:
-    der = input()
-    if der.isdigit():
-        tour1 = False
-        der = int(der)
-        if der > 15:
-            der = 15
-            print(color.YELLOW + 'Sorry! Value has been set to 15 to avoid overloading APIs and reduce execution time' + color.END)
-            print('Please comment this lines if you have an API key available')
-        elif der < 1:
-            der = 1
-            print(color.YELLOW + 'Minimum value is 1! Your answer has been set to 1' + color.END)
+            req_hist = json.dumps({"id": 2, "method": "blockchain.scripthash.get_history", "params": [scripthash]}) + "\n"
+            sock.sendall(req_hist.encode())
+            res_hist = json.loads(sock.recv(8192).decode())
+            tx_count = len(res_hist.get("result", []))
+
+            sock.close()
+            return confirmed, tx_count
+        except Exception:
+            continue
+    return 0, 0
+
+def check_evm(address: str) -> Tuple[int, int]:
+    """Queries public EVM RPC for (balance_wei, tx_count)."""
+    for rpc in EVM_RPCS:
+        try:
+            payload = [
+                {"jsonrpc": "2.0", "method": "eth_getBalance", "params": [address, "latest"], "id": 1},
+                {"jsonrpc": "2.0", "method": "eth_getTransactionCount", "params": [address, "latest"], "id": 2}
+            ]
+            r = requests.post(rpc, json=payload, timeout=4).json()
+            bal = int(r[0]['result'], 16) if 'result' in r[0] else 0
+            txs = int(r[1]['result'], 16) if 'result' in r[1] else 0
+            return bal, txs
+        except Exception:
+            continue
+    return 0, 0
+
+def check_solana(address: str) -> Tuple[int, int]:
+    """Queries Solana public RPC for (balance_lamports, tx_count)."""
+    for rpc in SOLANA_RPCS:
+        try:
+            bal_payload = {"jsonrpc": "2.0", "id": 1, "method": "getBalance", "params": [address]}
+            bal_res = requests.post(rpc, json=bal_payload, timeout=4).json()
+            bal = bal_res.get("result", {}).get("value", 0)
+
+            tx_payload = {"jsonrpc": "2.0", "id": 2, "method": "getSignaturesForAddress", "params": [address, {"limit": 5}]}
+            tx_res = requests.post(rpc, json=tx_payload, timeout=4).json()
+            txs = len(tx_res.get("result", []))
+            return bal, txs
+        except Exception:
+            continue
+    return 0, 0
+
+def check_tron(address: str) -> Tuple[int, int]:
+    """Queries TronGrid API for (balance_sun, is_active)."""
+    try:
+        url = f"{TRON_API}/{address}"
+        res = requests.get(url, timeout=4).json()
+        data = res.get("data", [])
+        if not data:
+            return 0, 0
+        bal = data[0].get("balance", 0)
+        trc20_tokens = len(data[0].get("trc20", []))
+        is_active = 1 if bal > 0 or trc20_tokens > 0 else 0
+        return bal, is_active
+    except Exception:
+        return 0, 0
+
+# ==========================================
+# SEED IDENTIFICATION & ANALYSIS
+# ==========================================
+
+def identify_and_check(seed_str: str, passphrase: str = "", count: int = 3, offline: bool = False, auto_yes: bool = False):
+    words = seed_str.strip().split()
+    word_count = len(words)
+    clean_seed = " ".join(words)
+
+    print(Colors.YELLOW + "\n=====================\n===   SeedCheck   ===\n=====================\n" + Colors.END)
+
+    if not offline and not auto_yes:
+        print(f"{Colors.YELLOW}{Colors.BOLD}[!] PRIVACY & NETWORK NOTICE:{Colors.END}")
+        print("This tool will perform online queries against public Electrum servers and")
+        print("public RPC endpoints to check balances and transaction history for derived addresses.")
+        try:
+            confirm = input(f"Do you want to proceed with online checks? [y/N]: ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            print("\nExiting.")
+            sys.exit(0)
+        if confirm != 'y':
+            print(f"{Colors.YELLOW}[*] Proceeding in OFFLINE mode (address derivation only).{Colors.END}\n")
+            offline = True
+        else:
+            print(f"{Colors.GREEN}[*] Proceeding with online checks.{Colors.END}\n")
+
+    print(f"Input seed length: {word_count} words")
+
+    found_activity = False
+
+    # 1. Monero check
+    if word_count in (13, 25):
+        try:
+            val_xmr = MoneroMnemonicValidator()
+            if val_xmr.IsValid(clean_seed):
+                print(f"{Colors.GREEN}[+] Identified: Monero ({word_count} words){Colors.END}")
+                seed_bytes = MoneroSeedGenerator(clean_seed).Generate()
+                xmr = Monero.FromSeed(seed_bytes)
+                primary_addr = xmr.PrimaryAddress()
+                print(f"  Primary Address: {primary_addr}")
+                return
+        except Exception:
+            pass
+
+    # 2. Electrum V2 check
+    try:
+        val_elec2 = ElectrumV2MnemonicValidator()
+        if val_elec2.IsValid(clean_seed):
+            m_type = val_elec2.GetMnemonicType(clean_seed)
+            print(f"{Colors.GREEN}[+] Identified: Electrum V2 ({m_type.name}){Colors.END}")
+            if m_type == ElectrumV2MnemonicTypes.SEGWIT:
+                master = ElectrumV2Segwit.FromMnemonic(clean_seed, passphrase)
+                addr_type = "p2wpkh (Segwit)"
+            else:
+                master = ElectrumV2Standard.FromMnemonic(clean_seed, passphrase)
+                addr_type = "p2pkh (Legacy)"
+
+            print(f"Deriving Electrum BTC addresses ({addr_type}):")
+            for i in range(count):
+                addr = master.GetAddress(Bip44Changes.CHAIN_EXT, i)
+                status = ""
+                if not offline:
+                    bal, txs = check_electrum_stratum('BTC', addr)
+                    if txs > 0 or bal > 0:
+                        status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} sats){Colors.END}"
+                        found_activity = True
+                    else:
+                        status = " -> No history"
+                print(f"  m/0/{i}: {addr}{status}")
+
+            change_addr = master.GetAddress(Bip44Changes.CHAIN_INT, 0)
+            status = ""
+            if not offline:
+                bal, txs = check_electrum_stratum('BTC', change_addr)
+                if txs > 0 or bal > 0:
+                    status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} sats){Colors.END}"
+                    found_activity = True
+                else:
+                    status = " -> No history"
+            print(f"  Change m/1/0: {change_addr}{status}")
+            return
+    except Exception:
+        pass
+
+    # 3. Electrum V1 check
+    try:
+        val_elec1 = ElectrumV1MnemonicValidator()
+        if val_elec1.IsValid(clean_seed):
+            print(f"{Colors.GREEN}[+] Identified: Electrum V1 (Old standard){Colors.END}")
+            # Derive standard Electrum V1
+            master = ElectrumV1.FromMnemonic(clean_seed)
+            for i in range(count):
+                addr = master.GetAddress(Bip44Changes.CHAIN_EXT, i)
+                status = ""
+                if not offline:
+                    bal, txs = check_electrum_stratum('BTC', addr)
+                    if txs > 0 or bal > 0:
+                        status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} sats){Colors.END}"
+                        found_activity = True
+                    else:
+                        status = " -> No history"
+                print(f"  m/0/{i}: {addr}{status}")
+            return
+    except Exception:
+        pass
+
+    # 4. BIP39 check
+    bip39_val = Bip39MnemonicValidator()
+    if not bip39_val.IsValid(clean_seed):
+        print(f"{Colors.RED}[-] Not a valid BIP39, Electrum, or Monero seed phrase.{Colors.END}")
+        return
+
+    # Identify BIP39 Language
+    lang_found = "unknown"
+    for lang in Bip39Languages:
+        if Bip39MnemonicValidator(lang).IsValid(clean_seed):
+            lang_found = lang.name.lower()
+            break
+
+    print(f"{Colors.GREEN}[+] Identified: BIP39 Mnemonic (Language: {lang_found}){Colors.END}")
+    seed_bytes = Bip39SeedGenerator(clean_seed).Generate(passphrase)
+
+    # --- BITCOIN (BIP44, BIP49, BIP84, Samourai) ---
+    print(f"\n{Colors.BLUE}=== Bitcoin (BTC) ==={Colors.END}")
+    schemes = [
+        ("BIP44 (Legacy p2pkh)", Bip44, Bip44Coins.BITCOIN),
+        ("BIP49 (Nested Segwit p2sh-p2wpkh)", Bip49, Bip49Coins.BITCOIN),
+        ("BIP84 (Native Segwit p2wpkh)", Bip84, Bip84Coins.BITCOIN)
+    ]
+    for name, bip_cls, coin_type in schemes:
+        print(f"--- {name} ---")
+        acc = bip_cls.FromSeed(seed_bytes, coin_type).Purpose().Coin().Account(0)
+        ext = acc.Change(Bip44Changes.CHAIN_EXT)
+        for i in range(count):
+            addr = ext.AddressIndex(i).PublicKey().ToAddress()
+            status = ""
+            if not offline:
+                bal, txs = check_electrum_stratum('BTC', addr)
+                if txs > 0 or bal > 0:
+                    status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} sats){Colors.END}"
+                    found_activity = True
+                else:
+                    status = " -> No history"
+            print(f"  Receiving #{i}: {addr}{status}")
+
+        change_addr = acc.Change(Bip44Changes.CHAIN_INT).AddressIndex(0).PublicKey().ToAddress()
+        status = ""
+        if not offline:
+            bal, txs = check_electrum_stratum('BTC', change_addr)
+            if txs > 0 or bal > 0:
+                status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} sats){Colors.END}"
+                found_activity = True
+            else:
+                status = " -> No history"
+        print(f"  Change #0:    {change_addr}{status}")
+
+    # Samourai Accounts (Postmix & Badbank)
+    print("--- Samourai Postmix & Badbank Accounts (BIP84) ---")
+    for acc_idx, acc_label in [(2147483646, "Postmix (acc 2147483646)"), (2147483647, "Badbank (acc 2147483647)")]:
+        acc = Bip84.FromSeed(seed_bytes, Bip84Coins.BITCOIN).Purpose().Coin().Account(acc_idx)
+        addr = acc.Change(Bip44Changes.CHAIN_EXT).AddressIndex(0).PublicKey().ToAddress()
+        status = ""
+        if not offline:
+            bal, txs = check_electrum_stratum('BTC', addr)
+            if txs > 0 or bal > 0:
+                status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} sats){Colors.END}"
+                found_activity = True
+            else:
+                status = " -> No history"
+        print(f"  {acc_label} #0: {addr}{status}")
+
+    # --- ETHEREUM / EVM ---
+    print(f"\n{Colors.BLUE}=== Ethereum / EVM (First {count} Accounts) ==={Colors.END}")
+    for acc_idx in range(count):
+        bip_eth = Bip44.FromSeed(seed_bytes, Bip44Coins.ETHEREUM).Purpose().Coin().Account(acc_idx).Change(Bip44Changes.CHAIN_EXT)
+        addr = bip_eth.AddressIndex(0).PublicKey().ToAddress()
+        status = ""
+        if not offline:
+            bal, txs = check_evm(addr)
+            if txs > 0 or bal > 0:
+                status = f" -> {Colors.GREEN}ACTIVE (Nonce/Txs: {txs}, Bal: {bal} wei){Colors.END}"
+                found_activity = True
+            else:
+                status = " -> No history"
+        print(f"  Account #{acc_idx} (m/44'/60'/{acc_idx}'/0/0): {addr}{status}")
+
+    # --- SOLANA ---
+    print(f"\n{Colors.BLUE}=== Solana (First {count} Accounts) ==={Colors.END}")
+    for acc_idx in range(count):
+        # Solana derivation: m/44'/501'/account'/0'
+        bip_sol = Bip44.FromSeed(seed_bytes, Bip44Coins.SOLANA).Purpose().Coin().Account(acc_idx).Change(Bip44Changes.CHAIN_EXT)
+        addr = bip_sol.AddressIndex(0).PublicKey().ToAddress()
+        status = ""
+        if not offline:
+            bal, txs = check_solana(addr)
+            if txs > 0 or bal > 0:
+                status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Lamports: {bal}){Colors.END}"
+                found_activity = True
+            else:
+                status = " -> No history"
+        print(f"  Account #{acc_idx} (m/44'/501'/{acc_idx}'/0'): {addr}{status}")
+
+    # --- TRON ---
+    print(f"\n{Colors.BLUE}=== Tron (First {count} Accounts) ==={Colors.END}")
+    for acc_idx in range(count):
+        bip_trx = Bip44.FromSeed(seed_bytes, Bip44Coins.TRON).Purpose().Coin().Account(acc_idx).Change(Bip44Changes.CHAIN_EXT)
+        addr = bip_trx.AddressIndex(0).PublicKey().ToAddress()
+        status = ""
+        if not offline:
+            bal, active = check_tron(addr)
+            if active > 0 or bal > 0:
+                status = f" -> {Colors.GREEN}ACTIVE (Bal: {bal} SUN){Colors.END}"
+                found_activity = True
+            else:
+                status = " -> No history"
+        print(f"  Account #{acc_idx} (m/44'/195'/{acc_idx}'/0/0): {addr}{status}")
+
+    # --- LITECOIN ---
+    print(f"\n{Colors.BLUE}=== Litecoin (LTC) ==={Colors.END}")
+    for name, bip_cls, coin_type in [
+        ("BIP44 (Legacy)", Bip44, Bip44Coins.LITECOIN),
+        ("BIP49 (Nested Segwit)", Bip49, Bip49Coins.LITECOIN),
+        ("BIP84 (Native Segwit)", Bip84, Bip84Coins.LITECOIN)
+    ]:
+        acc = bip_cls.FromSeed(seed_bytes, coin_type).Purpose().Coin().Account(0)
+        addr = acc.Change(Bip44Changes.CHAIN_EXT).AddressIndex(0).PublicKey().ToAddress()
+        status = ""
+        if not offline:
+            bal, txs = check_electrum_stratum('LTC', addr)
+            if txs > 0 or bal > 0:
+                status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} litoshis){Colors.END}"
+                found_activity = True
+            else:
+                status = " -> No history"
+        print(f"  {name} #0: {addr}{status}")
+
+    # --- DASH ---
+    print(f"\n{Colors.BLUE}=== Dash ==={Colors.END}")
+    dash_addr = Bip44.FromSeed(seed_bytes, Bip44Coins.DASH).Purpose().Coin().Account(0).Change(Bip44Changes.CHAIN_EXT).AddressIndex(0).PublicKey().ToAddress()
+    status = ""
+    if not offline:
+        bal, txs = check_electrum_stratum('DASH', dash_addr)
+        if txs > 0 or bal > 0:
+            status = f" -> {Colors.GREEN}ACTIVE (Txs: {txs}, Bal: {bal} duffs){Colors.END}"
+            found_activity = True
+        else:
+            status = " -> No history"
+    print(f"  BIP44 #0: {dash_addr}{status}")
+
+    # --- ZCASH ---
+    print(f"\n{Colors.BLUE}=== Zcash (Transparent) ==={Colors.END}")
+    zec_addr = Bip44.FromSeed(seed_bytes, Bip44Coins.ZCASH).Purpose().Coin().Account(0).Change(Bip44Changes.CHAIN_EXT).AddressIndex(0).PublicKey().ToAddress()
+    print(f"  BIP44 #0: {zec_addr} (Offline derivation)")
+
+    print("\n" + "="*30)
+    if not offline:
+        if found_activity:
+            print(f"{Colors.GREEN}[✓] Active addresses found with on-chain history.{Colors.END}")
+        else:
+            print(f"{Colors.YELLOW}[!] No on-chain activity detected on the checked addresses.{Colors.END}")
+    print("Done.\n")
+
+# ==========================================
+# ENTRY POINT
+# ==========================================
+
+def main():
+    parser = argparse.ArgumentParser(description="SeedCheck - Cryptocurrency Mnemonic Identifier & Checker")
+    parser.add_argument("-s", "--seed", help="Mnemonic seed phrase (wrap in quotes)")
+    parser.add_argument("-p", "--passphrase", default="", help="Optional BIP39 / Electrum passphrase")
+    parser.add_argument("-c", "--count", type=int, default=3, help="Number of receiving addresses / accounts to derive per scheme (default: 3)")
+    parser.add_argument("--offline", action="store_true", help="Perform address derivation only (skip online checks)")
+    parser.add_argument("-y", "--yes", action="store_true", help="Automatically accept online checks disclaimer")
+
+    args = parser.parse_args()
+
+    if args.seed:
+        seed_phrase = args.seed
     else:
-        print(color.RED + 'Only numbers allowed! Try again' + color.END)
+        seed_phrase = input("Enter seed phrase: ").strip()
 
-print(color.DARKCYAN + 'Do you want to add a passphrase to your mnemonic? (y/n)' + color.END)
-tour2 = True
-while tour2:
-    ans = input()
-    if ans.lower() == 'y':
-        passphr = input(color.DARKCYAN + 'Enter passphrase: ' + color.END)
-        tour2 = False
-    elif ans.lower() == 'n':
-        tour2 = False
-        passphr = ''
-    else:
-        print(color.RED + 'Please type y for yes or n for no' + color.END)
+    passphrase = args.passphrase
+    if not args.seed and not args.passphrase:
+        pass_in = input("Enter passphrase (press Enter to skip): ").strip()
+        if pass_in:
+            passphrase = pass_in
 
-# create list of addresses from the BIP39 mnemonic phrase
-btc_list = []
-eth_list = []
-ltc_list = []
-dash_list = []
-zec_list = []
-elec_addr = []
-if is_bip39:
-    # Bitcoin derivation
-    index = 0
-    print(color.GREEN + '=== BITCOIN ADDRESSES ===' + color.END)
-    print(color.CYAN + '+++ Legacy BIP44 +++' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=BTC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path(f"m/44'/0'/0'/0/{str(index)}")
-        btc_list.append(hdwallet.p2pkh_address())
-        print(btc_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=BTC) # add first change address
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path(f"m/44'/0'/0'/1/0")
-    btc_list.append(hdwallet.p2pkh_address())
-    print('First change address: ' + btc_list[-1])
-    index = 0
-    print(color.CYAN + '+++ Segwit BIP49 +++' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=BTC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path(f"m/49'/0'/0'/0/{str(index)}")
-        btc_list.append(hdwallet.p2wpkh_in_p2sh_address())
-        print(btc_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=BTC) # add first change address
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path(f"m/49'/0'/0'/1/0")
-    btc_list.append(hdwallet.p2wpkh_in_p2sh_address())
-    print('First change address: ' + btc_list[-1])
-    index = 0
-    print(color.CYAN + '+++ Native segwit BIP84 +++' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=BTC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path(f"m/84'/0'/0'/0/{str(index)}")
-        btc_list.append(hdwallet.p2wpkh_address())
-        print(btc_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=BTC) # add first change address
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path(f"m/84'/0'/0'/1/0")
-    btc_list.append(hdwallet.p2wpkh_address())
-    print('First change address: ' + btc_list[-1])
-    index = 0
-    print(color.CYAN + '+++ Native segwit BIP84 (Samourai postmix) +++' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=BTC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/84'/0'/0'/0/" + str(2147483646 + index)) # Samourai postmix
-        btc_list.append(hdwallet.p2wpkh_address())
-        print(btc_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=BTC) # add first change address
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path(f"m/84'/0'/0'/1/2147483646")
-    btc_list.append(hdwallet.p2wpkh_address())
-    print('First change address: ' + btc_list[-1])
+    identify_and_check(seed_phrase, passphrase, count=args.count, offline=args.offline, auto_yes=args.yes)
 
-    # Ethereum derivation
-    index = 0
-    print(color.GREEN + '=== ETHEREUM ADDRESSES ===' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=ETH)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/44'/60'/" + str(index) + "'/0/0")
-#        hdwallet.from_path("m/44'/60'/0'/0/" + str(index))
-        eth_list.append(hdwallet.p2pkh_address())
-        print(eth_list[-1])
-        index += 1
-
-    # Litecoin derivation
-    index = 0
-    print(color.GREEN + '=== LITECOIN ADDRESSES ===' + color.END)
-    print(color.CYAN + '+++ Legacy BIP44 +++' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=LTC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/44'/2'/0'/0/" + str(index))
-        ltc_list.append(hdwallet.p2pkh_address())
-        print(ltc_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=LTC)
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path("m/44'/2'/0'/1/0")
-    ltc_list.append(hdwallet.p2pkh_address())
-    print('First change address: ' + ltc_list[-1])
-    index = 0
-    print(color.CYAN + '+++ Segwit BIP49 +++' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=LTC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/49'/2'/0'/0/" + str(index))
-        ltc_list.append(hdwallet.p2wpkh_in_p2sh_address())
-        print(ltc_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=LTC)
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path("m/49'/2'/0'/1/0")
-    ltc_list.append(hdwallet.p2wpkh_in_p2sh_address())
-    print('First change address: ' + ltc_list[-1])
-    index = 0
-    print(color.CYAN + '+++ Native segwit BIP84 +++' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=LTC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/84'/2'/0'/0/" + str(index))
-        ltc_list.append(hdwallet.p2wpkh_address())
-        print(ltc_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=LTC)
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path("m/84'/2'/0'/1/0")
-    ltc_list.append(hdwallet.p2wpkh_address())
-    print('First change address: ' + ltc_list[-1])
-
-    # Dash derivation
-    index = 0
-    print(color.GREEN + '=== DASH ADDRESSES ===' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=DASH)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/44'/5'/0'/0/" + str(index))
-        dash_list.append(hdwallet.p2pkh_address())
-        print(dash_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=DASH)
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path("m/44'/5'/0'/1/0")
-    dash_list.append(hdwallet.p2pkh_address())
-    print('First change address: ' + dash_list[-1])
-
-    # Zcash derivation
-    index = 0
-    print(color.GREEN + '=== ZCASH ===' + color.END)
-    while index < der:
-        hdwallet: HDWallet = HDWallet(symbol=ZEC)
-        hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-        hdwallet.from_path("m/133'/60'/0'/0/" + str(index))
-        zec_list.append(hdwallet.p2pkh_address())
-        print(zec_list[-1])
-        index += 1
-    hdwallet: HDWallet = HDWallet(symbol=ZEC)
-    hdwallet.from_mnemonic(mnemonic=seed_str, passphrase=passphr, language=language)
-    hdwallet.from_path("m/133'/60'/0'/1/0")
-    zec_list.append(hdwallet.p2pkh_address())
-    print('First change address: ' + zec_list[-1])
-
-# create list of addresses from the electrum mnemonic phrase
-if is_electrum:
-    print(color.GREEN + '=== Electrum Bitcoin addresses ===' + color.END)
-    if electrum_type == 'segwit':
-        index = 0
-        print(color.GREEN + 'Found Electrum addresses:' + color.END)
-        while index < der:
-            elec_addr.append(electrum_derive(seed_str, passphr, index, 'p2wpkh'))
-            print(elec_addr[index])
-            index += 1
-        elec_addr.append(electrum_change_derive(seed_str, passphr, 0, 'p2wpkh'))
-        print('First change address: ' + elec_addr[-1])
-    elif electrum_type == 'standard':
-        index = 0
-        while index < der:
-            elec_addr.append(electrum_derive(seed_str, passphr, index, 'p2pkh'))
-            print(elec_addr[index])
-            index += 1
-        elec_addr.append(electrum_change_derive(seed_str, passphr, 0, 'p2pkh'))
-        print('First change address: ' + elec_addr[-1])
-
-# Check addresses online
-online_found = False  # if True address was found used and a message will be shown
-elec_found = False
-if online_check:
-    if is_bip39 == True:
-        print(color.DARKCYAN + '\nchecking bip39 derived addresses online' + color.END)
-    # check BTC
-    i = 0
-    while i < len(btc_list):
-        link = 'https://blockchain.info/q/addressfirstseen/' + btc_list[i]
-        time.sleep(400/1000)
-        used = requests.get(link)
-        data = used.text    # gives a string
-        if data != '0':
-            if i < (der + 1):
-                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0 ---' + color.END)
-                i = der + 1
-            elif i < ((der + 1) * 2):
-                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/44\'/0\'/0\'/0\' ---' + color.END)
-                i = (der + 1) * 2
-            elif i < ((der + 1) * 3):
-                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0 ---' + color.END)
-                i = (der + 1) * 3
-            elif i < ((der + 1) * 4):
-                print(color.GREEN + '--- The given seed was used to derive Bitcoin addresses with derivation path m/49\'/0\'/0\'/0\' ---' + color.END)
-                i = (der + 1) * 4
-        i += 1
-    # check ETH
-    i = 0
-    while i < len(eth_list):
-        link = 'https://api.blockcypher.com/v1/eth/main/addrs/' + eth_list[i]
-        eth_resp = requests.get(link)
-        time.sleep(400/1000)
-        eth_resp = eth_resp.text
-        eth_resp_dict = json.loads(eth_resp)
-        if eth_resp_dict['n_tx'] != 0:
-            online_found = True
-            print(color.GREEN + '--- The given seed was used to derive Ethereum addresses with derivation path m/44\'/60\'/0\'/0 ---' + color.END)
-            break
-        i += 1
-
-    # check LTC
-    i = 0
-    while i < len(ltc_list):
-        ltc_tx = blockcypher.get_total_num_transactions(ltc_list[i], coin_symbol='ltc', api_key=blockcypherAPI)
-        if blockcypherAPI is None:
-            time.sleep(400/1000)
-        if ltc_tx != 0:
-            online_found = True
-            if i < (der + 1):
-                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/44\'/2\'/0\'/0 ---' + color.END)
-                i = (der + 1)
-            elif i < ((der + 1) * 2):
-                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/49\'/2\'/0\'/0 ---' + color.END)
-                i = ((der + 1) * 2)
-            elif i < ((der + 1) * 3):
-                print(color.GREEN + '--- The given seed was used to derive Litecoin addresses with derivation path m/84\'/2\'/0\'/0 ---' + color.END)
-                i = (der + 1) * 3
-        else:
-            i += 1
-    # Check DASH
-    i = 0
-    while i < len(dash_list):
-        dash_tx = blockcypher.get_total_num_transactions(dash_list[i], coin_symbol='dash', api_key=blockcypherAPI)
-        if blockcypherAPI is None:
-            time.sleep(400/1000)
-        if dash_tx != 0:
-            online_found = True
-            print(color.GREEN + '--- The given seed was used to derive Dash addresses with derivation path m/44\'/5\'/0\'/0 ---' + color.END)
-            break
-        else:
-            i += 1
-    # Check ZEC
-    i = 0
-    while i < len(zec_list):
-        link = 'https://api.zcha.in/v2/mainnet/accounts/' + zec_list[i]
-        zec_resp = requests.get(link)
-        time.sleep(400/1000)
-        zec_resp = zec_resp.text
-        zec_resp_dict = json.loads(zec_resp)
-        if zec_resp_dict['firstSeen'] != 0:
-            online_found = True
-            print(color.GREEN + '--- The given seed was used to derive ZCash addresses with derivation path m/44\'/133\'/0\'/0 ---' + color.END)
-            break
-        else:
-            i += 1
-
-    # check Electrum BTC addresses
-    i = 0
-    if len(elec_addr) > 0:
-        print(color.DARKCYAN + '\nchecking Electrum derived addresses online' + color.END)
-    while i < len(elec_addr):
-        link = 'https://blockchain.info/q/addressfirstseen/' + elec_addr[i]
-        time.sleep(400 / 1000)
-        used = requests.get(link)
-        data = used.text  # gives a string
-        if data != '0':
-            print(color.GREEN + '--- The given seed has been used with an Electrum Bitcoin wallet ---' + color.END)
-            elec_found = True
-            break
-        i += 1
-
-if (online_found == False and is_bip39 == True):
-    print(color.RED + 'Bip39 derivation path not found')
-    print('Maybe you should try with some multi-currency desktop wallet or with some custom derivation path or adding a passphrase' + color.END)
-
-if (elec_found == False and is_electrum == True):
-    print(color.RED + 'The seed is related to an Electrum wallet but seems to be unused')
-    print('Maybe you should try it with some altcoin versions of Electrum' + color.END)
-    
+if __name__ == "__main__":
+    main()
